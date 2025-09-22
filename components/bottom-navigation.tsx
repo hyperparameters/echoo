@@ -1,53 +1,83 @@
-"use client"
+"use client";
 
-import { Home, FolderOpen, Sparkles, Settings, Calendar } from "lucide-react"
-import { useRouter, usePathname } from "next/navigation"
-import { useMemo } from "react"
+import { Home, FolderOpen, Sparkles, Settings, Calendar } from "lucide-react";
+import { useRouter, usePathname } from "next/navigation";
+import { useMemo } from "react";
+import Image from "next/image";
 
 interface BottomNavigationProps {
-  currentTab: "home" | "events" | "collections" | "agent" | "settings"
+  currentTab: "home" | "events" | "collections" | "agent" | "settings";
 }
 
 export function BottomNavigation({ currentTab }: BottomNavigationProps) {
-  const router = useRouter()
-  const pathname = usePathname()
+  const router = useRouter();
+  const pathname = usePathname();
 
   const tabs = [
     { id: "home", icon: Home, label: "Home", path: "/home" },
     { id: "events", icon: Calendar, label: "Events", path: "/events" },
-    { id: "agent", icon: Sparkles, label: "Echoo", path: "/agent", special: true },
-    { id: "collections", icon: FolderOpen, label: "Collections", path: "/collections" },
+    {
+      id: "agent",
+      icon: null,
+      imageSrc: "/echoo-logo-white-sm.png",
+      activeImageSrc: "/echoo-logo-sm.png",
+      label: "Echoo",
+      path: "/agent",
+      special: true,
+    },
+    {
+      id: "collections",
+      icon: FolderOpen,
+      label: "Collections",
+      path: "/collections",
+    },
     { id: "settings", icon: Settings, label: "Settings", path: "/settings" },
-  ]
+  ];
 
   const activeIndex = useMemo(() => {
-    const index = tabs.findIndex((tab) => pathname === tab.path)
-    return index >= 0 ? index : 0
-  }, [pathname])
+    const index = tabs.findIndex((tab) => pathname === tab.path);
+    return index >= 0 ? index : 0;
+  }, [pathname]);
 
   const handleItemClick = (index: number) => {
-    router.push(tabs[index].path)
-  }
+    router.push(tabs[index].path);
+  };
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50">
       <nav className="interactive-dock" role="navigation">
         {tabs.map((tab, index) => {
-          const isActive = index === activeIndex
-          const isEchoo = tab.special
-          const IconComponent = tab.icon
+          const isActive = index === activeIndex;
+          const isEchoo = tab.special;
+          const IconComponent = tab.icon;
 
           return (
             <button
               key={tab.id}
-              className={`dock-item ${isActive ? "active" : ""} ${isEchoo ? "echoo-special" : ""}`}
+              className={`dock-item ${isActive ? "active" : ""} ${
+                isEchoo ? "echoo-special" : ""
+              }`}
               onClick={() => handleItemClick(index)}
             >
               <div className="dock-icon">
-                <IconComponent className="icon" />
+                {tab.imageSrc ? (
+                  <Image
+                    src={
+                      isActive && tab.activeImageSrc
+                        ? tab.activeImageSrc
+                        : tab.imageSrc
+                    }
+                    alt={tab.label}
+                    width={60}
+                    height={60}
+                    className={`icon echoo-logo ${isActive ? "active" : ""}`}
+                  />
+                ) : IconComponent ? (
+                  <IconComponent className="icon" />
+                ) : null}
               </div>
             </button>
-          )
+          );
         })}
       </nav>
 
@@ -87,33 +117,71 @@ export function BottomNavigation({ currentTab }: BottomNavigationProps) {
         }
 
         .dock-item.active {
-          background: linear-gradient(135deg, rgba(255, 107, 71, 0.2), rgba(0, 139, 139, 0.2));
+          background: linear-gradient(
+            135deg,
+            rgba(255, 107, 71, 0.2),
+            rgba(0, 139, 139, 0.2)
+          );
           transform: translateY(-4px);
         }
 
         .dock-item.active::after {
-          content: '';
+          content: "";
           position: absolute;
           bottom: -6px; /* Adjusted position */
           left: 50%;
           transform: translateX(-50%);
           width: 20px; /* Smaller indicator */
           height: 2px;
-          background: linear-gradient(90deg, #FF6B47, #008B8B);
+          background: linear-gradient(90deg, #ff6b47, #008b8b);
           border-radius: 1px;
         }
 
         .echoo-special {
-          transform: scale(1.3); /* Increased scale to make echoo more prominent */
+          transform: scale(1.3) translateY(-8px); /* Lift the logo above the dock */
           margin: 0 8px;
+          z-index: 10;
+          position: relative;
+        }
+
+        .echoo-special::before {
+          content: "";
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 80px;
+          height: 80px;
+          background: radial-gradient(
+            circle,
+            rgba(255, 107, 71, 0.1) 0%,
+            transparent 70%
+          );
+          border-radius: 50%;
+          z-index: -1;
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        .echoo-special:hover::before {
+          opacity: 1;
+        }
+
+        .echoo-special.active::before {
+          opacity: 1;
+          background: radial-gradient(
+            circle,
+            rgba(255, 107, 71, 0.2) 0%,
+            transparent 70%
+          );
         }
 
         .echoo-special:hover {
-          transform: scale(1.35) translateY(-2px);
+          transform: scale(1.35) translateY(-10px);
         }
 
         .echoo-special.active {
-          transform: scale(1.35) translateY(-4px);
+          transform: scale(1.35) translateY(-12px);
         }
 
         .dock-icon {
@@ -125,25 +193,35 @@ export function BottomNavigation({ currentTab }: BottomNavigationProps) {
         }
 
         .echoo-special .dock-icon {
-          width: 24px; /* Slightly larger for echoo */
-          height: 24px;
+          width: 60px; /* Larger for echoo logo */
+          height: 60px;
+          position: relative;
         }
 
         .icon {
           width: 16px; /* Reduced icon size */
           height: 16px;
-          color: #FDFCF0;
+          color: #fdfcf0;
           transition: all 0.3s ease;
         }
 
         .echoo-special .icon {
-          width: 20px; /* Larger echoo icon */
-          height: 20px;
+          width: 60px; /* Larger echoo logo */
+          height: 60px;
         }
 
         .dock-item.active .icon {
-          color: #FF6B47;
+          color: #ff6b47;
           filter: drop-shadow(0 0 8px rgba(255, 107, 71, 0.5));
+        }
+
+        .echoo-logo {
+          transition: all 0.3s ease;
+          filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+        }
+
+        .dock-item.active .echoo-logo {
+          filter: drop-shadow(0 6px 12px rgba(255, 107, 71, 0.4));
         }
 
         /* Removed all dock-text styles since text is hidden */
@@ -153,18 +231,18 @@ export function BottomNavigation({ currentTab }: BottomNavigationProps) {
             margin: 0 8px 8px;
             padding: 10px 8px; /* Reduced mobile padding */
           }
-          
+
           .dock-item {
             min-width: 40px; /* Smaller mobile size */
             height: 40px;
             padding: 8px;
           }
-          
+
           .echoo-special {
             margin: 0 4px;
           }
         }
       `}</style>
     </div>
-  )
+  );
 }

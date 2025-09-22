@@ -84,7 +84,8 @@ export default function SelfiePage() {
         <Button
           onClick={handleContinue}
           disabled={!selfieUrl}
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+          variant="gradient"
+          className="w-full"
         >
           Continue
         </Button>

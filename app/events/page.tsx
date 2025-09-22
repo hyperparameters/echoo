@@ -49,7 +49,7 @@ export default function EventsPage() {
             <h1 className="text-2xl font-bold text-foreground">Events</h1>
             <p className="text-muted-foreground">Discover opportunities near you</p>
           </div>
-          <Button size="sm" className="bg-gradient-to-r from-[#FF6B47] to-[#008B8B] hover:opacity-90">
+          <Button size="sm" variant="gradient">
             <Plus className="w-4 h-4 mr-2" />
             Create Event
           </Button>
@@ -61,13 +61,13 @@ export default function EventsPage() {
         <div className="grid grid-cols-3 gap-4">
           <Card className="glass-card">
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-[#FF6B47]">12</div>
+              <div className="text-2xl font-bold text-brand-primary">12</div>
               <div className="text-xs text-muted-foreground">Upcoming</div>
             </CardContent>
           </Card>
           <Card className="glass-card">
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-[#008B8B]">5</div>
+              <div className="text-2xl font-bold text-brand-accent">5</div>
               <div className="text-xs text-muted-foreground">Attending</div>
             </CardContent>
           </Card>
@@ -113,13 +113,12 @@ export default function EventsPage() {
                 </div>
               </div>
               <div className="flex gap-2 mt-4">
-                <Button size="sm" className="flex-1 bg-gradient-to-r from-[#FF6B47] to-[#008B8B] hover:opacity-90">
+                <Button size="sm" variant="gradient" className="flex-1">
                   Join Event
                 </Button>
                 <Button
                   size="sm"
-                  variant="outline"
-                  className="border-[#FF6B47] text-[#FF6B47] hover:bg-[#FF6B47] hover:text-white bg-transparent"
+                  variant="brand-outline"
                 >
                   Learn More
                 </Button>
