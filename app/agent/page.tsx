@@ -1,114 +1,142 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useRef } from "react"
-import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Sparkles } from "lucide-react"
-import { BottomNavigation } from "@/components/bottom-navigation"
-import { PromptInputBox } from "@/components/prompt-input-box"
+import { useState, useEffect, useRef } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Sparkles } from "lucide-react";
+import { BottomNavigation } from "@/components/bottom-navigation";
+import { PromptInputBox } from "@/components/prompt-input-box";
 
 interface Message {
-  id: number
-  type: "user" | "ai"
-  content: string
-  timestamp: Date
-  suggestions?: string[]
+  id: number;
+  type: "user" | "ai";
+  content: string;
+  timestamp: Date;
+  suggestions?: string[];
 }
 
 export default function AgentPage() {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [isTyping, setIsTyping] = useState(false)
-  const [userName, setUserName] = useState("")
-  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const [userName, setUserName] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const userData = localStorage.getItem("echooUser")
-    if (userData) {
-      const user = JSON.parse(userData)
-      setUserName(user.fullName)
+    if (typeof window !== 'undefined') {
+      const userData = localStorage.getItem("echooUser");
+      if (userData) {
+        const user = JSON.parse(userData);
+        setUserName(user.fullName);
 
-      // Initialize with welcome message
-      const welcomeMessage: Message = {
-        id: 1,
-        type: "ai",
-        content: `Hi ${user.fullName}! I'm your AI growth strategist. I can help you with content ideas, posting schedules, and growth strategies. What would you like to work on today?`,
-        timestamp: new Date(),
-        suggestions: [
-          "Analyze my recent posts",
-          "Suggest posting times",
-          "Content ideas for this week",
-          "Growth strategy tips",
-        ],
+        // Initialize with welcome message
+        const welcomeMessage: Message = {
+          id: 1,
+          type: "ai",
+          content: `Hi ${user.fullName}! I'm your AI growth strategist. I can help you with content ideas, posting schedules, and growth strategies. What would you like to work on today?`,
+          timestamp: new Date(),
+          suggestions: [
+            "Analyze my recent posts",
+            "Suggest posting times",
+            "Content ideas for this week",
+            "Growth strategy tips",
+          ],
+        };
+        setMessages([welcomeMessage]);
       }
-      setMessages([welcomeMessage])
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSendMessage = async (content: string, files?: File[]) => {
-    if (!content.trim() && (!files || files.length === 0)) return
+    if (!content.trim() && (!files || files.length === 0)) return;
 
     const userMessage: Message = {
       id: messages.length + 1,
       type: "user",
-      content: files && files.length > 0 ? `${content} [${files.length} file(s) attached]` : content,
+      content:
+        files && files.length > 0
+          ? `${content} [${files.length} file(s) attached]`
+          : content,
       timestamp: new Date(),
-    }
+    };
 
-    setMessages((prev) => [...prev, userMessage])
-    setIsTyping(true)
+    setMessages((prev) => [...prev, userMessage]);
+    setIsTyping(true);
 
     // Simulate AI response
     setTimeout(() => {
-      const aiResponse = generateAIResponse(content)
+      const aiResponse = generateAIResponse(content);
       const aiMessage: Message = {
         id: messages.length + 2,
         type: "ai",
         content: aiResponse.content,
         timestamp: new Date(),
         suggestions: aiResponse.suggestions,
-      }
-      setMessages((prev) => [...prev, aiMessage])
-      setIsTyping(false)
-    }, 1500)
-  }
+      };
+      setMessages((prev) => [...prev, aiMessage]);
+      setIsTyping(false);
+    }, 1500);
+  };
 
   const generateAIResponse = (userInput: string) => {
-    const lowerInput = userInput.toLowerCase()
+    const lowerInput = userInput.toLowerCase();
 
-    if (lowerInput.includes("content ideas") || lowerInput.includes("content")) {
+    if (
+      lowerInput.includes("content ideas") ||
+      lowerInput.includes("content")
+    ) {
       return {
         content:
           "Based on your interests in Fashion and Travel, here are some trending content ideas:\n\n• Outfit transitions in different cities\n• Local fashion finds while traveling\n• Behind-the-scenes of photoshoots\n• Style guides for different destinations\n\nThese types of posts typically get 40% more engagement than regular posts!",
-        suggestions: ["Show me posting schedule", "Analyze my engagement", "More travel content ideas"],
-      }
-    } else if (lowerInput.includes("posting times") || lowerInput.includes("schedule")) {
+        suggestions: [
+          "Show me posting schedule",
+          "Analyze my engagement",
+          "More travel content ideas",
+        ],
+      };
+    } else if (
+      lowerInput.includes("posting times") ||
+      lowerInput.includes("schedule")
+    ) {
       return {
         content:
           "Based on your audience analysis, here are your optimal posting times:\n\n📅 Best Days: Tuesday, Thursday, Sunday\n⏰ Peak Hours: 7-9 AM, 12-2 PM, 7-9 PM\n🌍 Your audience is most active in IST timezone\n\nPosting during these windows can increase your reach by up to 60%!",
-        suggestions: ["Create posting calendar", "Analyze my audience", "Content performance tips"],
-      }
+        suggestions: [
+          "Create posting calendar",
+          "Analyze my audience",
+          "Content performance tips",
+        ],
+      };
     } else if (lowerInput.includes("analyze") || lowerInput.includes("posts")) {
       return {
         content:
           "I've analyzed your recent posts! Here's what I found:\n\n📈 Top performing content: Travel + Fashion combo\n💡 Engagement rate: 4.2% (above average!)\n🎯 Best hashtags: #fashiontravel #ootd #wanderlust\n\nYour sunset posts get 3x more likes than indoor shots. Consider more golden hour content!",
-        suggestions: ["Hashtag recommendations", "Content calendar", "Engagement tips"],
-      }
+        suggestions: [
+          "Hashtag recommendations",
+          "Content calendar",
+          "Engagement tips",
+        ],
+      };
     } else {
       return {
         content:
           "I'd be happy to help you with that! As your AI growth strategist, I can assist with:\n\n• Content strategy and ideas\n• Optimal posting schedules\n• Hashtag recommendations\n• Engagement analysis\n• Growth tactics\n\nWhat specific area would you like to focus on?",
-        suggestions: ["Content ideas", "Posting schedule", "Growth tips", "Hashtag strategy"],
-      }
+        suggestions: [
+          "Content ideas",
+          "Posting schedule",
+          "Growth tips",
+          "Hashtag strategy",
+        ],
+      };
     }
-  }
+  };
 
   const handleSuggestionClick = (suggestion: string) => {
-    handleSendMessage(suggestion)
-  }
+    handleSendMessage(suggestion);
+  };
 
   return (
     <div className="min-h-screen pb-20 flex flex-col">
@@ -119,21 +147,34 @@ export default function AgentPage() {
             <Sparkles className="w-5 h-5 text-brand-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-bold text-foreground">Echoo AI Assistant</h1>
+            <h1 className="text-xl font-bold text-foreground">
+              Echoo AI Assistant
+            </h1>
             <div className="flex items-center space-x-2">
               <div className="w-2 h-2 bg-brand-accent rounded-full"></div>
               <span className="text-sm text-muted-foreground">Online</span>
             </div>
           </div>
         </div>
-        <p className="text-sm text-muted-foreground mt-2">Your personal growth strategist</p>
+        <p className="text-sm text-muted-foreground mt-2">
+          Your personal growth strategist
+        </p>
       </div>
 
       {/* Messages */}
       <div className="flex-1 p-4 space-y-4 overflow-y-auto">
         {messages.map((message) => (
-          <div key={message.id} className={`flex ${message.type === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[80%] ${message.type === "user" ? "order-2" : "order-1"}`}>
+          <div
+            key={message.id}
+            className={`flex ${
+              message.type === "user" ? "justify-end" : "justify-start"
+            }`}
+          >
+            <div
+              className={`max-w-[80%] ${
+                message.type === "user" ? "order-2" : "order-1"
+              }`}
+            >
               <Card
                 className={`${
                   message.type === "user"
@@ -142,11 +183,20 @@ export default function AgentPage() {
                 }`}
               >
                 <CardContent className="p-3">
-                  <p className="text-sm whitespace-pre-line">{message.content}</p>
+                  <p className="text-sm whitespace-pre-line">
+                    {message.content}
+                  </p>
                   <p
-                    className={`text-xs mt-2 ${message.type === "user" ? "text-white/70" : "text-muted-foreground"}`}
+                    className={`text-xs mt-2 ${
+                      message.type === "user"
+                        ? "text-white/70"
+                        : "text-muted-foreground"
+                    }`}
                   >
-                    {message.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                    {message.timestamp.toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </p>
                 </CardContent>
               </Card>
@@ -205,5 +255,5 @@ export default function AgentPage() {
 
       <BottomNavigation currentTab="agent" />
     </div>
-  )
+  );
 }
