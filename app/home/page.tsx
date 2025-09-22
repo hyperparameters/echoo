@@ -6,6 +6,8 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Search, Filter, Plus, TrendingUp, MapPin, Sparkles, Heart, MessageCircle } from "lucide-react"
 import { BottomNavigation } from "@/components/bottom-navigation"
 import PhotoAlbum from "react-photo-album"
+import { FileUploadDialog } from "@/components/file-upload-dialog"
+import { FilecoinUploadResponse, UploadService, GalleryItem } from "@/services/upload"
 
 interface ContentPost {
   id: number
@@ -27,6 +29,9 @@ interface Photo {
 
 export default function HomePage() {
   const [userName, setUserName] = useState("")
+  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false)
+  const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([])
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     const userData = localStorage.getItem("echooUser")
@@ -35,6 +40,18 @@ export default function HomePage() {
       setUserName(user.fullName)
     }
   }, [])
+
+  useEffect(() => {
+    // Load gallery items from localStorage
+    const uploadedItems = UploadService.getGalleryItems()
+    setGalleryItems(uploadedItems)
+  }, [refreshKey])
+
+  const handleUploadComplete = (responses: FilecoinUploadResponse[]) => {
+    console.log('Upload completed:', responses)
+    // Refresh the gallery to show newly uploaded items
+    setRefreshKey(prev => prev + 1)
+  }
 
   const mockPosts: ContentPost[] = [
     {
@@ -93,29 +110,84 @@ export default function HomePage() {
     },
   ]
 
-  const photos: Photo[] = mockPosts.map((post, index) => ({
+  // Combine uploaded gallery items with mock posts
+  const allContent = [
+    ...galleryItems.map((item, index) => ({
+      id: `uploaded-${index}`,
+      image: item.image_url,
+      caption: item.description,
+      likes: item.likes,
+      comments: item.comments,
+      location: item.location,
+      timestamp: new Date(item.created_at).toLocaleDateString() === new Date().toLocaleDateString()
+        ? 'Just uploaded'
+        : new Date(item.created_at).toLocaleDateString(),
+      isUploaded: true
+    })),
+    ...mockPosts.map(post => ({ ...post, isUploaded: false }))
+  ]
+
+  const photos: Photo[] = allContent.map((post, index) => ({
     src: post.image,
     width: 400,
-    height: [300, 450, 350, 400, 320, 380][index] || 350, // Varied heights for masonry effect
+    height: [300, 450, 350, 400, 320, 380, 420, 280, 360, 340][index % 10] || 350, // Varied heights for masonry effect
     alt: post.caption,
     key: post.id.toString(),
   }))
 
   const quickActions = [
-    { icon: Plus, label: "Add Content", color: "text-primary" },
-    { icon: TrendingUp, label: "View Analytics", color: "text-green-400" },
-    { icon: MapPin, label: "Find Events", color: "text-blue-400" },
-    { icon: Sparkles, label: "AI Insights", color: "text-purple-400" },
+    {
+      icon: Plus,
+      label: "Add Content",
+      category: "Programming",
+      gradient: "from-blue-500 via-purple-500 to-pink-500",
+      bgColor: "bg-gradient-to-br from-blue-500/20 to-purple-500/20",
+      action: () => setIsUploadDialogOpen(true)
+    },
+    {
+      icon: TrendingUp,
+      label: "View Analytics",
+      category: "Design",
+      gradient: "from-yellow-400 via-orange-400 to-red-500",
+      bgColor: "bg-gradient-to-br from-yellow-400/20 to-orange-500/20",
+      action: () => console.log('Analytics clicked')
+    },
+    {
+      icon: MapPin,
+      label: "Find Events",
+      category: "Digital Art",
+      gradient: "from-teal-400 via-cyan-400 to-blue-500",
+      bgColor: "bg-gradient-to-br from-teal-400/20 to-cyan-500/20",
+      action: () => console.log('Events clicked')
+    },
+    {
+      icon: Sparkles,
+      label: "AI Insights",
+      category: "Copywriting",
+      gradient: "from-pink-400 via-purple-400 to-indigo-500",
+      bgColor: "bg-gradient-to-br from-pink-400/20 to-purple-500/20",
+      action: () => console.log('AI Insights clicked')
+    },
   ]
 
   const renderPhoto = ({ photo, wrapperStyle, renderDefaultPhoto }: any) => {
-    const postData = mockPosts.find((post) => post.image === photo.src)
+    const postData = allContent.find((post) => post.image === photo.src)
 
     return (
       <div style={wrapperStyle} className="group cursor-pointer">
-        <Card className="glass-card border-border/50 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl">
+        <Card className={`glass-card border-border/50 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl ${postData?.isUploaded ? 'ring-2 ring-primary/20' : ''}`}>
           <div className="relative overflow-hidden">
             {renderDefaultPhoto({ wrapped: true })}
+
+            {/* New Upload Badge */}
+            {postData?.isUploaded && (
+              <div className="absolute top-2 right-2 z-10">
+                <div className="bg-gradient-to-r from-primary to-secondary text-white text-xs px-2 py-1 rounded-full font-medium">
+                  New
+                </div>
+              </div>
+            )}
+
             {/* Overlay with post info */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
               <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
@@ -161,46 +233,41 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Performance Stats */}
-        <div className="grid grid-cols-3 gap-4">
-          <Card className="glass-card border-border/50">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-foreground">2.5K</div>
-              <div className="text-sm text-muted-foreground">Followers</div>
-            </CardContent>
-          </Card>
-          <Card className="glass-card border-border/50">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-400">+4.2%</div>
-              <div className="text-sm text-muted-foreground">Growth</div>
-            </CardContent>
-          </Card>
-          <Card className="glass-card border-border/50">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-foreground">89</div>
-              <div className="text-sm text-muted-foreground">Posts</div>
-            </CardContent>
-          </Card>
-        </div>
 
-        {/* Quick Actions */}
-        <Card className="glass-card border-border/50">
-          <CardContent className="p-6 space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Quick Actions</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {quickActions.map((action, index) => (
-                <Button
-                  key={index}
-                  variant="ghost"
-                  className="h-auto p-4 flex flex-col items-center space-y-2 hover:bg-accent/50"
-                >
-                  <action.icon className={`w-6 h-6 ${action.color}`} />
-                  <span className="text-sm text-muted-foreground">{action.label}</span>
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Quick Actions - Gradient Card Style */}
+        <div className="space-y-4">
+          <h2 className="text-lg font-semibold text-foreground">Let's explore new fields</h2>
+          <div className="grid grid-cols-2 gap-4">
+            {quickActions.map((action, index) => (
+              <div
+                key={index}
+                onClick={action.action}
+                className={`relative overflow-hidden rounded-3xl ${action.bgColor} backdrop-blur-sm border border-white/10 cursor-pointer group transition-all duration-300 hover:scale-[1.02] hover:shadow-xl`}
+              >
+                {/* Gradient Background */}
+                <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-20 group-hover:opacity-30 transition-opacity duration-300`} />
+
+                {/* Content */}
+                <div className="relative p-6 flex flex-col justify-between h-32">
+                  {/* Arrow Icon */}
+                  <div className="flex justify-end">
+                    <div className="w-8 h-8 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center">
+                      <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 17L17 7M17 7H7M17 7V17" />
+                      </svg>
+                    </div>
+                  </div>
+
+                  {/* Category and Title */}
+                  <div className="space-y-1">
+                    <span className="text-xs text-white/70 font-medium">{action.category}</span>
+                    <h3 className="text-sm font-semibold text-white">{action.label}</h3>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
 
         {/* Content Gallery */}
         <div className="space-y-4">
@@ -229,6 +296,16 @@ export default function HomePage() {
       </div>
 
       <BottomNavigation currentTab="home" />
+
+      {/* File Upload Dialog */}
+      <FileUploadDialog
+        isOpen={isUploadDialogOpen}
+        onClose={() => setIsUploadDialogOpen(false)}
+        onUploadComplete={handleUploadComplete}
+        maxFiles={10}
+        maxFileSize={50 * 1024 * 1024} // 50MB
+        acceptedFileTypes={['image/*']}
+      />
     </div>
   )
 }
