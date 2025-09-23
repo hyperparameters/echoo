@@ -30,7 +30,7 @@ export default function OnboardingPage() {
   // Redirect to home if onboarding is complete
   useEffect(() => {
     if (hasCompletedOnboarding && currentStep === OnboardingStep.COMPLETE) {
-      router.push('/home');
+      router.push("/home");
     }
   }, [hasCompletedOnboarding, currentStep, router]);
 
@@ -76,7 +76,7 @@ export default function OnboardingPage() {
       const updatedUser = await updateProfile(profileData);
       completeOnboardingStep(OnboardingStep.DETAILS, updatedUser);
     } catch (error) {
-      console.error('Failed to update profile:', error);
+      console.error("Failed to update profile:", error);
     }
   };
 
@@ -120,9 +120,11 @@ export default function OnboardingPage() {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background relative overflow-hidden">
-      <div className="absolute inset-0">
-        <Ripple />
-      </div>
+      {currentStep !== "welcome" && (
+        <div className="absolute inset-0">
+          <Ripple />
+        </div>
+      )}
 
       {/* Background Photos Grid (only show for login step) */}
       {currentStep === "login" && (
@@ -145,7 +147,7 @@ export default function OnboardingPage() {
       )}
 
       {/* Logo (show for all steps except welcome which has its own) */}
-      {currentStep !== OnboardingStep.WELCOME && (
+      {currentStep == OnboardingStep.LOGIN && (
         <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-10">
           <div className="w-24 h-24 flex items-center justify-center">
             <Image
@@ -160,7 +162,7 @@ export default function OnboardingPage() {
       )}
 
       {/* Main Content */}
-      <div className="w-full max-w-sm mx-auto relative z-10 mt-16">
+      <div className="w-full max-w-sm mx-auto relative z-10 ">
         {renderOnboardingStep()}
       </div>
 

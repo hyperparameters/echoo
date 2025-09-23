@@ -1,14 +1,13 @@
-// Images API functions and React Query hooks
+// Images API functions
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from './client';
 import type {
   ImageCreate,
   ImageResponse,
   ImageListResponse,
-  LocalUserData,
 } from './types';
-import { localStorageHelpers } from './auth';
+import { FilecoinUploadResponse, UploadService } from '../../services/upload';
+import { useMutation, useQuery } from '@tanstack/react-query';
 
 // API Functions
 export const imagesApi = {
@@ -63,95 +62,31 @@ export const uploadImageFile = async (file: File): Promise<{
 };
 
 // Helper function to create selfie image record
-export const createSelfieImage = async (file: File, userId: number): Promise<ImageResponse> => {
-  // First upload the file
-  const uploadResult = await uploadImageFile(file);
-
-  // Then create the image record
-  const imageData: ImageCreate = {
-    name: `selfie-${Date.now()}`,
-    user_id: userId,
-    is_selfie: true,
-    fotoowl_url: uploadResult.url,
-    filecoin_cid: uploadResult.cid,
-    size: file.size,
-    description: 'User selfie',
-    image_encoding: file.type,
-  };
-
-  return imagesApi.createImage(imageData);
+export const createSelfieImage = async (file: File, userId: number): Promise<FilecoinUploadResponse> => {
+  // First upload the file using UploadService with selfie type
+  const uploadResult = await UploadService.uploadFile(file, userId.toString(), undefined, 'selfie');
+  return uploadResult;
 };
 
-// React Query Hooks
-export const useCreateImage = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: imagesApi.createImage,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['images'] });
-    },
-  });
-};
-
-export const useUpdateImage = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ imageId, data }: { imageId: number; data: Partial<ImageCreate> }) =>
-      imagesApi.updateImage(imageId, data),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['images'] });
-      queryClient.invalidateQueries({ queryKey: ['image', variables.imageId] });
-    },
-  });
-};
-
+// React Query hook for uploading selfie
 export const useUploadSelfie = () => {
-  const queryClient = useQueryClient();
-
   return useMutation({
     mutationFn: async ({ file, userId }: { file: File; userId: number }) => {
-      const imageResponse = await createSelfieImage(file, userId);
-
-      // Update the user's selfie_url in profile if successful
-      const userData = localStorageHelpers.getUserData();
-      if (userData && imageResponse.fotoowl_url) {
-        const updatedUser = {
-          ...userData.user,
-          selfie_url: imageResponse.fotoowl_url,
-          selfie_cid: imageResponse.filecoin_cid,
-        };
-
-        localStorageHelpers.updateUserData(updatedUser);
-        queryClient.setQueryData(['user', 'profile'], updatedUser);
-      }
-
-      return imageResponse;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['images'] });
-      queryClient.invalidateQueries({ queryKey: ['user'] });
+      return createSelfieImage(file, userId);
     },
   });
 };
 
-export const useUserImages = (params?: {
+// React Query hook for getting image list
+export const useImageList = (params?: {
   limit?: number;
   offset?: number;
   event_id?: number;
 }) => {
   return useQuery({
-    queryKey: ['images', 'user', params],
+    queryKey: ['images', 'list', params],
     queryFn: () => imagesApi.getImageList(params),
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 };
 
-export const useImage = (imageId: number) => {
-  return useQuery({
-    queryKey: ['image', imageId],
-    queryFn: () => imagesApi.getImage(imageId),
-    enabled: !!imageId,
-  });
-};

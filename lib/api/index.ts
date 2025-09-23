@@ -7,21 +7,10 @@ export * from './images';
 
 // Re-export commonly used functions
 export {
-  useLogin,
-  useRegister,
-  useProfile,
-  useUpdateProfile,
-  useLogout,
-  localStorageHelpers,
   isOnboardingComplete,
 } from './auth';
 
 export {
-  useCreateImage,
-  useUpdateImage,
-  useUploadSelfie,
-  useUserImages,
-  useImage,
   uploadImageFile,
   createSelfieImage,
 } from './images';

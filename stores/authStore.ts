@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { authApi, isOnboardingComplete } from '@/lib/api/auth';
+import { apiClient } from '@/lib/api/client';
 import type {
   UserProfile,
   LoginCredentials,
@@ -103,10 +104,9 @@ export const useAuthStore = create<AuthStore>()(
         try {
           const response = await authApi.login(credentials);
           const user = response.user;
-          // const hasCompleted = isOnboardingComplete(user);
-          // const currentStep = determineCurrentStep(user, hasCompleted);
-          const currentStep = OnboardingStep.SELFIE;
-          const hasCompleted = false;
+          const hasCompleted = isOnboardingComplete(user);
+          const currentStep = determineCurrentStep(user, hasCompleted);
+
           set({
             user,
             isLoggedIn: true,
@@ -375,3 +375,37 @@ export const useProfile = () => {
     error: store.error,
   };
 };
+
+// Initialize API client with auth store connection
+// This runs when the module is first imported
+if (typeof window !== 'undefined') {
+  // Connect API client to auth store for automatic auth handling
+  const connectApiClient = () => {
+    const authStore = useAuthStore.getState();
+
+    // Create a simplified auth store interface for the API client
+    const authStoreInterface = {
+      get credentials() {
+        return useAuthStore.getState().credentials;
+      },
+      logout: () => {
+        useAuthStore.getState().logout();
+      },
+      clearError: () => {
+        useAuthStore.getState().clearError();
+      }
+    };
+
+    apiClient.setAuthStore(authStoreInterface);
+    console.log('🔗 API Client connected to Zustand auth store on initialization');
+  };
+
+  // Connect immediately
+  connectApiClient();
+
+  // Also reconnect when the store rehydrates (after page refresh)
+  useAuthStore.persist.onFinishHydration(() => {
+    connectApiClient();
+    console.log('🔄 API Client reconnected after store hydration');
+  });
+}

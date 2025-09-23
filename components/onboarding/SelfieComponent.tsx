@@ -4,22 +4,25 @@ import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Camera, Upload, Loader2, Check } from "lucide-react";
-import { useUploadSelfie } from "@/lib/api";
+import { useUploadSelfie } from "@/lib/api/images";
 import type { UserProfile } from "@/lib/api";
 
 interface SelfieComponentProps {
   user: UserProfile;
   onSelfieUploaded: (user: UserProfile) => void;
   onSkip: () => void;
+  onNext?: () => void;
 }
 
 export function SelfieComponent({
   user,
   onSelfieUploaded,
   onSkip,
+  onNext,
 }: SelfieComponentProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const uploadSelfieMutation = useUploadSelfie();
@@ -61,9 +64,12 @@ export function SelfieComponent({
       // Update user object with new selfie data
       const updatedUser: UserProfile = {
         ...user,
-        selfie_url: result.fotoowl_url,
-        selfie_cid: result.filecoin_cid,
+        selfie_url: result.filecoin_url,
+        selfie_cid: result.cid,
       };
+
+      // Set the uploaded image URL for display
+      setUploadedImageUrl(result.filecoin_url || null);
 
       onSelfieUploaded(updatedUser);
     } catch (error) {
@@ -77,6 +83,12 @@ export function SelfieComponent({
       URL.revokeObjectURL(previewUrl);
     }
     onSkip();
+  };
+
+  const handleNext = () => {
+    if (onNext) {
+      onNext();
+    }
   };
 
   // Clean up preview URL on unmount
@@ -102,11 +114,24 @@ export function SelfieComponent({
         <div className="relative">
           <div
             className={`w-64 h-64 rounded-full border-2 border-dashed border-border flex items-center justify-center cursor-pointer transition-all hover:border-primary/50 ${
-              previewUrl ? "border-solid border-primary" : ""
+              previewUrl || uploadedImageUrl
+                ? "border-solid border-primary"
+                : ""
             }`}
-            onClick={handleCaptureClick}
+            onClick={uploadedImageUrl ? undefined : handleCaptureClick}
           >
-            {previewUrl ? (
+            {uploadedImageUrl ? (
+              <div className="relative w-full h-full">
+                <img
+                  src={uploadedImageUrl}
+                  alt="Uploaded selfie"
+                  className="w-full h-full object-cover rounded-full"
+                />
+                <div className="absolute bottom-2 right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center shadow-lg">
+                  <Check className="w-4 h-4 text-white" />
+                </div>
+              </div>
+            ) : previewUrl ? (
               <div className="relative w-full h-full">
                 <img
                   src={previewUrl}
@@ -175,31 +200,44 @@ export function SelfieComponent({
 
       {/* Action Buttons */}
       <div className="space-y-3">
-        <Button
-          onClick={handleUpload}
-          disabled={!selectedFile || uploadSelfieMutation.isPending}
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
-        >
-          {uploadSelfieMutation.isPending ? (
-            <>
-              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              Uploading...
-            </>
-          ) : selectedFile ? (
-            "Upload Selfie"
-          ) : (
-            "Select a Photo First"
-          )}
-        </Button>
+        {uploadedImageUrl ? (
+          // Show next button when upload is successful
+          <Button
+            onClick={handleNext}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+          >
+            Continue
+          </Button>
+        ) : (
+          // Show upload/skip buttons when no upload yet
+          <>
+            <Button
+              onClick={handleUpload}
+              disabled={!selectedFile || uploadSelfieMutation.isPending}
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+            >
+              {uploadSelfieMutation.isPending ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Uploading...
+                </>
+              ) : selectedFile ? (
+                "Upload Selfie"
+              ) : (
+                "Select a Photo First"
+              )}
+            </Button>
 
-        <Button
-          onClick={handleSkip}
-          variant="ghost"
-          className="w-full text-muted-foreground hover:text-foreground"
-          disabled={uploadSelfieMutation.isPending}
-        >
-          Skip for now
-        </Button>
+            <Button
+              onClick={handleSkip}
+              variant="ghost"
+              className="w-full text-muted-foreground hover:text-foreground"
+              disabled={uploadSelfieMutation.isPending}
+            >
+              Skip for now
+            </Button>
+          </>
+        )}
       </div>
 
       {/* Tips */}

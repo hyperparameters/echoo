@@ -17,6 +17,8 @@ import {
   UploadProgress,
 } from "@/services/upload";
 import { UploadProgressBar, FileUploadProgress } from "./upload-progress-bar";
+import { useAuth } from "@/stores/authStore";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface FileUploadDialogProps {
   isOpen: boolean;
@@ -35,6 +37,8 @@ export function FileUploadDialog({
   maxFileSize = 50 * 1024 * 1024, // 50MB
   acceptedFileTypes = ["image/*"],
 }: FileUploadDialogProps) {
+  const { user, logout } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<FileUploadProgress[]>(
     []
@@ -89,7 +93,7 @@ export function FileUploadDialog({
       const files = Array.from(event.dataTransfer.files);
       const mockEvent = {
         target: { files: files },
-      } as React.ChangeEvent<HTMLInputElement>;
+      } as unknown as React.ChangeEvent<HTMLInputElement>;
       handleFileSelect(mockEvent);
     },
     [handleFileSelect]
@@ -100,17 +104,16 @@ export function FileUploadDialog({
   }, []);
 
   const getUserId = useCallback(() => {
-    try {
-      const userData = localStorage.getItem("echooUser");
-      if (userData) {
-        const user = JSON.parse(userData);
-        return user.id || user.userId || "anonymous-user";
-      }
-    } catch (error) {
-      console.error("Failed to get user ID:", error);
+    if (user?.id) {
+      return user.id.toString();
     }
-    return `user-${Date.now()}`;
-  }, []);
+
+    // If no user ID found, logout and redirect to home
+    console.warn("No user ID found, logging out and redirecting to home");
+    logout();
+    window.location.href = "/";
+    return "0";
+  }, [user, logout]);
 
   const startUpload = useCallback(async () => {
     if (selectedFiles.length === 0) return;
@@ -172,9 +175,7 @@ export function FileUploadDialog({
 
           results.push(result);
 
-          // Store the upload response to localStorage immediately for gallery loading
-          // This ensures photos are available even if the dialog is closed before all uploads complete
-          UploadService.storeUploadResponse(result);
+          // Upload completed successfully
         } catch (error) {
           // Mark as error
           const errorMessage =
@@ -192,15 +193,22 @@ export function FileUploadDialog({
 
       setUploadResults(results);
 
-      if (results.length > 0 && onUploadComplete) {
-        onUploadComplete(results);
+      if (results.length > 0) {
+        // Invalidate the getImageList query to refresh the image list
+        queryClient.invalidateQueries({
+          queryKey: ["images", "list"],
+        });
+
+        if (onUploadComplete) {
+          onUploadComplete(results);
+        }
       }
     } catch (error) {
       console.error("Upload process failed:", error);
     } finally {
       setIsUploading(false);
     }
-  }, [selectedFiles, onUploadComplete, getUserId]);
+  }, [selectedFiles, onUploadComplete, getUserId, queryClient]);
 
   const handleClose = useCallback(() => {
     if (!isUploading) {
@@ -260,8 +268,12 @@ export function FileUploadDialog({
 
         setUploadResults((prev) => [...prev, result]);
 
-        // Store the retry upload response to localStorage for gallery loading
-        UploadService.storeUploadResponse(result);
+        // Invalidate the getImageList query to refresh the image list
+        queryClient.invalidateQueries({
+          queryKey: ["images", "list"],
+        });
+
+        // Retry upload completed successfully
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Upload failed";
@@ -274,7 +286,7 @@ export function FileUploadDialog({
         );
       }
     },
-    [selectedFiles, getUserId]
+    [selectedFiles, getUserId, queryClient]
   );
 
   const formatFileSize = (bytes: number): string => {

@@ -6,17 +6,6 @@ export interface FilecoinUploadResponse {
   user_id: string;
 }
 
-export interface GalleryItem {
-  id: string;
-  image_url: string;
-  name: string;
-  size: number;
-  description: string;
-  created_at: string;
-  likes: number;
-  comments: number;
-  location: string;
-}
 
 export interface UploadProgress {
   loaded: number;
@@ -27,13 +16,43 @@ export interface UploadProgress {
 export class UploadService {
   private static apiUrl = process.env.NEXT_PUBLIC_FILECOIN_UPLOAD_API_URL || process.env.FILECOIN_UPLOAD_API_URL;
 
+  private static async getImageDimensions(file: File): Promise<{ width: number; height: number }> {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        reject(new Error('Failed to load image for dimension extraction'));
+      };
+
+      img.src = url;
+    });
+  }
+
   static async uploadFile(
     file: File,
     userId: string,
-    onProgress?: (progress: UploadProgress) => void
+    onProgress?: (progress: UploadProgress) => void,
+    imageType: string = 'image'
   ): Promise<FilecoinUploadResponse> {
     if (!this.apiUrl) {
       throw new Error('FILECOIN_UPLOAD_API_URL is not configured');
+    }
+
+    // Extract image dimensions before upload
+    let imageDimensions: { width: number; height: number } | null = null;
+    try {
+      if (file.type.startsWith('image/')) {
+        imageDimensions = await this.getImageDimensions(file);
+      }
+    } catch (error) {
+      console.warn('Failed to extract image dimensions:', error);
     }
 
     return new Promise((resolve, reject) => {
@@ -72,12 +91,19 @@ export class UploadService {
       };
 
       // Prepare the request
-      xhr.open('POST', this.apiUrl);
-      xhr.setRequestHeader('x-file-name', file.name);
+      xhr.open('POST', this.apiUrl!);
+      xhr.setRequestHeader('x-file-name', encodeURIComponent(file.name));
       xhr.setRequestHeader('user-id', userId);
       xhr.setRequestHeader('x-file-size', file.size.toString());
       xhr.setRequestHeader('x-upload-method', 'stream');
+      xhr.setRequestHeader('x-image-type', imageType);
       xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+
+      // Add image dimension headers if available
+      if (imageDimensions) {
+        xhr.setRequestHeader('x-image-width', imageDimensions.width.toString());
+        xhr.setRequestHeader('x-image-height', imageDimensions.height.toString());
+      }
 
       // Send the file
       xhr.send(file);
@@ -88,7 +114,8 @@ export class UploadService {
     files: File[],
     userId: string,
     onProgress?: (fileIndex: number, progress: UploadProgress) => void,
-    onFileComplete?: (fileIndex: number, response: FilecoinUploadResponse) => void
+    onFileComplete?: (fileIndex: number, response: FilecoinUploadResponse) => void,
+    imageType: string = 'image'
   ): Promise<FilecoinUploadResponse[]> {
     const results: FilecoinUploadResponse[] = [];
 
@@ -97,7 +124,8 @@ export class UploadService {
         const result = await this.uploadFile(
           files[i],
           userId,
-          onProgress ? (progress) => onProgress(i, progress) : undefined
+          onProgress ? (progress) => onProgress(i, progress) : undefined,
+          imageType
         );
         results.push(result);
 
@@ -117,121 +145,11 @@ export class UploadService {
     return results;
   }
 
-  static transformToGalleryItem(response: FilecoinUploadResponse): GalleryItem {
-    // Generate a meaningful description based on file name
-    const fileName = response.name.replace(/^piece-/, '').replace(/\.[^/.]+$/, '');
-    const fileExtension = response.name.split('.').pop()?.toUpperCase() || 'IMAGE';
 
-    // Generate some sample metadata (you can customize this logic)
-    const descriptions = [
-      'Beautiful moment captured ✨',
-      'Amazing shot! 📸',
-      'Love this composition 🎨',
-      'Perfect lighting ☀️',
-      'Stunning colors 🌈',
-      'Great perspective 👁️',
-      'Incredible detail 🔍',
-      'Artistic vision 🎭'
-    ];
 
-    const locations = [
-      'San Francisco, CA',
-      'New York, NY',
-      'Los Angeles, CA',
-      'Miami, FL',
-      'Austin, TX',
-      'Seattle, WA',
-      'Chicago, IL',
-      'Boston, MA'
-    ];
 
-    const randomDescription = descriptions[Math.floor(Math.random() * descriptions.length)];
-    const randomLocation = locations[Math.floor(Math.random() * locations.length)];
 
-    return {
-      id: response.cid,
-      image_url: response.filecoin_url,
-      name: response.name,
-      size: response.size,
-      description: randomDescription,
-      created_at: new Date().toISOString(), // Generate current timestamp since it's not provided
-      likes: Math.floor(Math.random() * 2000) + 100, // Random likes between 100-2100
-      comments: Math.floor(Math.random() * 50) + 5, // Random comments between 5-55
-      location: randomLocation
-    };
-  }
 
-  static storeUploadResponse(response: FilecoinUploadResponse): void {
-    try {
-      // Transform to gallery item first
-      const galleryItem = this.transformToGalleryItem(response);
 
-      // Store the raw upload response for potential future use
-      const existingUploads = this.getStoredUploads();
-      const updatedUploads = [response, ...existingUploads];
-      const trimmedUploads = updatedUploads.slice(0, 50);
-      localStorage.setItem('echoo_uploads', JSON.stringify(trimmedUploads));
 
-      // Store as gallery item (this is what the home page uses)
-      this.storeGalleryItem(galleryItem);
-    } catch (error) {
-      console.error('Failed to store upload response:', error);
-    }
-  }
-
-  static storeGalleryItem(galleryItem: GalleryItem): void {
-    try {
-      const existingGallery = this.getGalleryItems();
-      const updatedGallery = [galleryItem, ...existingGallery];
-
-      // Keep only the last 100 gallery items
-      const trimmedGallery = updatedGallery.slice(0, 100);
-
-      localStorage.setItem('echoo_gallery', JSON.stringify(trimmedGallery));
-    } catch (error) {
-      console.error('Failed to store gallery item:', error);
-    }
-  }
-
-  static getStoredUploads(): FilecoinUploadResponse[] {
-    try {
-      const storedUploads = localStorage.getItem('echoo_uploads');
-      return storedUploads ? JSON.parse(storedUploads) : [];
-    } catch (error) {
-      console.error('Failed to retrieve stored uploads:', error);
-      return [];
-    }
-  }
-
-  static getGalleryItems(): GalleryItem[] {
-    try {
-      const storedGallery = localStorage.getItem('echoo_gallery');
-      return storedGallery ? JSON.parse(storedGallery) : [];
-    } catch (error) {
-      console.error('Failed to retrieve gallery items:', error);
-      return [];
-    }
-  }
-
-  static clearStoredUploads(): void {
-    try {
-      localStorage.removeItem('echoo_uploads');
-    } catch (error) {
-      console.error('Failed to clear stored uploads:', error);
-    }
-  }
-
-  static clearGalleryItems(): void {
-    try {
-      localStorage.removeItem('echoo_gallery');
-    } catch (error) {
-      console.error('Failed to clear gallery items:', error);
-    }
-  }
-
-  static getAllUserContent(): GalleryItem[] {
-    // This method returns all content combining mock data with uploaded items
-    const uploadedItems = this.getGalleryItems();
-    return uploadedItems;
-  }
 }

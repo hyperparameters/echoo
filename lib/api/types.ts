@@ -58,25 +58,29 @@ export interface ImageResponse {
   description?: string | null;
   image_encoding?: string | null;
   event_id?: number | null;
+  height?: number | null;
+  width?: number | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface ImageListResponse {
-  id?: number | null;
+  id: number;
   name: string;
-  user_id?: number | null;
+  user_id: number;
   fotoowl_id?: number | null;
   fotoowl_url?: string | null;
-  filecoin_url?: string | null;
+  filecoin_url: string;
   filecoin_cid?: string | null;
-  size?: number | null;
+  size: number;
   description?: string | null;
   image_encoding?: string | null;
   event_id?: number | null;
-  image_url?: string | null;
-  created_at?: string | null;
-  updated_at?: string | null;
+  image_url: string;
+  height?: number | null;
+  width?: number | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface EventResponse {
