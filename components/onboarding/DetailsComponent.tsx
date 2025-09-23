@@ -1,51 +1,59 @@
 "use client";
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Instagram, Mail, Loader2, User } from 'lucide-react';
-import { useProfile } from '@/stores/authStore';
-import type { UserProfile, UserDetailsForm } from '@/lib/api';
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Instagram, Mail, Loader2, User } from "lucide-react";
+import { useProfile } from "@/stores/authStore";
+import type { UserProfile, UserDetailsForm } from "@/lib/api";
 
 interface DetailsComponentProps {
   user: UserProfile;
   onDetailsCompleted: (user: UserProfile) => void;
 }
 
-export function DetailsComponent({ user, onDetailsCompleted }: DetailsComponentProps) {
+export function DetailsComponent({
+  user,
+  onDetailsCompleted,
+}: DetailsComponentProps) {
   const [formData, setFormData] = useState<UserDetailsForm>({
-    username: user.username || '',
-    email: user.email || '',
-    instagram_url: user.instagram_url || '',
-    description: user.description || '',
-    interests: [], // This will be added to API later
+    username: user.username || "",
+    email: user.email || "",
+    instagram_url: user.instagram_url || "",
+    description: user.description || "",
+    interests: user.interests
+      ? user.interests
+          .split(",")
+          .map((i) => i.trim())
+          .filter((i) => i)
+      : [],
   });
 
   const { updateProfile, isLoading, error } = useProfile();
 
   // Available interests (will be moved to API/config later)
   const availableInterests = [
-    'Fashion',
-    'Food',
-    'Travel',
-    'Fitness',
-    'Beauty',
-    'Tech',
-    'Lifestyle',
-    'Photography',
-    'Music',
-    'Art',
-    'Gaming',
-    'Sports',
-    'Business',
-    'Health',
-    'Nature',
-    'Design',
+    "Fashion",
+    "Food",
+    "Travel",
+    "Fitness",
+    "Beauty",
+    "Tech",
+    "Lifestyle",
+    "Photography",
+    "Music",
+    "Art",
+    "Gaming",
+    "Sports",
+    "Business",
+    "Health",
+    "Nature",
+    "Design",
   ];
 
   const toggleInterest = (interest: string) => {
@@ -71,31 +79,28 @@ export function DetailsComponent({ user, onDetailsCompleted }: DetailsComponentP
         email: formData.email || null,
         instagram_url: formData.instagram_url || null,
         description: formData.description || null,
+        interests:
+          formData.interests.length > 0 ? formData.interests.join(",") : null,
       };
 
       const updatedUser = await updateProfile(updateData);
-
-      // Note: interests will need to be handled separately when added to API
-      // For now, we'll store them in localStorage via Zustand
-      if (formData.interests.length > 0) {
-        // This could be added to the store in the future
-        localStorage.setItem('echoo-user-interests', JSON.stringify(formData.interests));
-      }
-
       onDetailsCompleted(updatedUser);
     } catch (error) {
-      console.error('Profile update failed:', error);
+      console.error("Profile update failed:", error);
     }
   };
 
   // Check if minimum required fields are filled
-  const isValid = formData.username.trim() &&
+  const isValid =
+    formData.username.trim() &&
     (formData.email || formData.instagram_url || formData.description);
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="text-center space-y-2">
-        <h1 className="text-2xl font-bold text-foreground">Complete Your Profile</h1>
+        <h1 className="text-2xl font-bold text-foreground">
+          Complete Your Profile
+        </h1>
         <p className="text-muted-foreground">
           Tell us about yourself to personalize your experience
         </p>
@@ -114,7 +119,10 @@ export function DetailsComponent({ user, onDetailsCompleted }: DetailsComponentP
                   placeholder="Enter your full name"
                   value={formData.username}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, username: e.target.value }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      username: e.target.value,
+                    }))
                   }
                   className="bg-input border-border pl-10"
                   required
@@ -148,7 +156,10 @@ export function DetailsComponent({ user, onDetailsCompleted }: DetailsComponentP
                   placeholder="@yourusername"
                   value={formData.instagram_url}
                   onChange={(e) =>
-                    setFormData((prev) => ({ ...prev, instagram_url: e.target.value }))
+                    setFormData((prev) => ({
+                      ...prev,
+                      instagram_url: e.target.value,
+                    }))
                   }
                   className="bg-input border-border pl-10"
                 />
@@ -169,11 +180,15 @@ export function DetailsComponent({ user, onDetailsCompleted }: DetailsComponentP
                 {availableInterests.map((interest) => (
                   <Badge
                     key={interest}
-                    variant={formData.interests.includes(interest) ? 'default' : 'outline'}
+                    variant={
+                      formData.interests.includes(interest)
+                        ? "default"
+                        : "outline"
+                    }
                     className={`cursor-pointer transition-all ${
                       formData.interests.includes(interest)
-                        ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                        : 'border-border hover:border-primary/50 hover:bg-primary/10'
+                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                        : "border-border hover:border-primary/50 hover:bg-primary/10"
                     }`}
                     onClick={() => toggleInterest(interest)}
                   >
@@ -200,13 +215,16 @@ export function DetailsComponent({ user, onDetailsCompleted }: DetailsComponentP
                 placeholder="Tell us a bit about yourself..."
                 value={formData.description}
                 onChange={(e) =>
-                  setFormData((prev) => ({ ...prev, description: e.target.value }))
+                  setFormData((prev) => ({
+                    ...prev,
+                    description: e.target.value,
+                  }))
                 }
                 className="bg-input border-border resize-none min-h-[80px]"
                 maxLength={200}
               />
               <p className="text-xs text-muted-foreground text-right">
-                {formData.description.length}/200
+                {formData.description?.length || 0}/200
               </p>
             </div>
           </CardContent>
@@ -216,7 +234,8 @@ export function DetailsComponent({ user, onDetailsCompleted }: DetailsComponentP
         {!isValid && (
           <Alert className="border-yellow-500/50 bg-yellow-500/10">
             <AlertDescription className="text-yellow-700 dark:text-yellow-400">
-              Please fill in your name and at least one contact method (email or Instagram).
+              Please fill in your name and at least one contact method (email or
+              Instagram).
             </AlertDescription>
           </Alert>
         )}
@@ -225,7 +244,7 @@ export function DetailsComponent({ user, onDetailsCompleted }: DetailsComponentP
         {error && (
           <Alert className="border-destructive/50 bg-destructive/10">
             <AlertDescription className="text-destructive">
-              {error || 'Failed to update profile. Please try again.'}
+              {error || "Failed to update profile. Please try again."}
             </AlertDescription>
           </Alert>
         )}
@@ -242,7 +261,7 @@ export function DetailsComponent({ user, onDetailsCompleted }: DetailsComponentP
               Updating Profile...
             </>
           ) : (
-            'Complete Setup'
+            "Complete Setup"
           )}
         </Button>
       </form>

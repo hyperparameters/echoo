@@ -36,7 +36,7 @@ interface AuthActions {
   register: (userData: UserCreate) => Promise<void>;
 
   // Profile Actions
-  updateProfile: (data: UserProfileUpdate) => Promise<void>;
+  updateProfile: (data: UserProfileUpdate) => Promise<UserProfile>;
   refreshProfile: () => Promise<void>;
 
   // Onboarding Actions
@@ -63,7 +63,7 @@ const determineCurrentStep = (user: UserProfile | null, hasCompleted: boolean): 
 
   // Check what steps are missing
   if (!user.selfie_url) return OnboardingStep.SELFIE;
-  if (!user.email && !user.instagram_url && !user.description) return OnboardingStep.DETAILS;
+  if (!user.email && !user.instagram_url && !user.description && !user.interests) return OnboardingStep.DETAILS;
 
   return OnboardingStep.WELCOME;
 };

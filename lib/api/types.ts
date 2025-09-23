@@ -8,6 +8,7 @@ export interface UserProfile {
   twitter_url?: string | null;
   linkedin_url?: string | null;
   description?: string | null;
+  interests?: string | null; // Comma-separated string
   selfie_cid?: string | null;
   selfie_url?: string | null;
   created_at: string;
@@ -25,6 +26,7 @@ export interface UserProfileUpdate {
   twitter_url?: string | null;
   linkedin_url?: string | null;
   description?: string | null;
+  interests?: string | null; // Comma-separated string
 }
 
 export interface UserLoginResponse {

@@ -38,7 +38,7 @@ export const isOnboardingComplete = (user: UserProfile): boolean => {
   return Boolean(
     user?.username &&
     user?.selfie_url &&
-    (user?.email || user?.instagram_url || user?.description)
+    (user?.email || user?.instagram_url || user?.description || user?.interests)
   );
 };
 
