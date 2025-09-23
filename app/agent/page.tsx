@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { BottomNavigation } from "@/components/bottom-navigation";
+import { AppLayout } from "@/components/app-layout";
 import { PromptInputBox } from "@/components/prompt-input-box";
 import { Logo } from "@/components/logo";
 
@@ -139,121 +139,121 @@ export default function AgentPage() {
   };
 
   return (
-    <div className="min-h-screen pb-20 flex flex-col">
-      {/* Header */}
-      <div className="p-6 border-b border-border/50">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-brand-primary/20 to-brand-accent/20 flex items-center justify-center">
-            <Logo variant="icon" width={56} height={56} />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">
-              Echoo AI Assistant
-            </h1>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-brand-accent rounded-full"></div>
-              <span className="text-sm text-muted-foreground">Online</span>
+    <AppLayout>
+      <div className="flex flex-col min-h-[calc(100vh-80px)]">
+        {/* Header */}
+        <div className="p-6 border-b border-border/50">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-brand-primary/20 to-brand-accent/20 flex items-center justify-center">
+              <Logo variant="icon" width={56} height={56} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">
+                Echoo AI Assistant
+              </h1>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-brand-accent rounded-full"></div>
+                <span className="text-sm text-muted-foreground">Online</span>
+              </div>
             </div>
           </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            Your personal growth strategist
+          </p>
         </div>
-        <p className="text-sm text-muted-foreground mt-2">
-          Your personal growth strategist
-        </p>
-      </div>
 
-      {/* Messages */}
-      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`flex ${
-              message.type === "user" ? "justify-end" : "justify-start"
-            }`}
-          >
+        {/* Messages */}
+        <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+          {messages.map((message) => (
             <div
-              className={`max-w-[80%] ${
-                message.type === "user" ? "order-2" : "order-1"
+              key={message.id}
+              className={`flex ${
+                message.type === "user" ? "justify-end" : "justify-start"
               }`}
             >
-              <Card
-                className={`${
-                  message.type === "user"
-                    ? "bg-brand-gradient text-white border-none"
-                    : "glass-card border-border/50"
+              <div
+                className={`max-w-[80%] ${
+                  message.type === "user" ? "order-2" : "order-1"
                 }`}
               >
+                <Card
+                  className={`${
+                    message.type === "user"
+                      ? "bg-brand-gradient text-white border-none"
+                      : "glass-card border-border/50"
+                  }`}
+                >
+                  <CardContent className="p-3">
+                    <p className="text-sm whitespace-pre-line">
+                      {message.content}
+                    </p>
+                    <p
+                      className={`text-xs mt-2 ${
+                        message.type === "user"
+                          ? "text-white/70"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {message.timestamp.toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* AI Suggestions */}
+                {message.type === "ai" && message.suggestions && (
+                  <div className="mt-3 space-y-2">
+                    {message.suggestions.map((suggestion, index) => (
+                      <Badge
+                        key={index}
+                        variant="outline"
+                        className="cursor-pointer border-border hover:border-brand-primary hover:bg-brand-primary/10 mr-2 mb-2 text-foreground hover:text-brand-primary"
+                        onClick={() => handleSuggestionClick(suggestion)}
+                      >
+                        {suggestion}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          ))}
+
+          {/* Typing Indicator */}
+          {isTyping && (
+            <div className="flex justify-start">
+              <Card className="glass-card border-border/50">
                 <CardContent className="p-3">
-                  <p className="text-sm whitespace-pre-line">
-                    {message.content}
-                  </p>
-                  <p
-                    className={`text-xs mt-2 ${
-                      message.type === "user"
-                        ? "text-white/70"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    {message.timestamp.toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </p>
+                  <div className="flex space-x-1">
+                    <div className="w-2 h-2 bg-brand-primary rounded-full animate-bounce"></div>
+                    <div
+                      className="w-2 h-2 bg-brand-accent rounded-full animate-bounce"
+                      style={{ animationDelay: "0.1s" }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-brand-primary rounded-full animate-bounce"
+                      style={{ animationDelay: "0.2s" }}
+                    ></div>
+                  </div>
                 </CardContent>
               </Card>
-
-              {/* AI Suggestions */}
-              {message.type === "ai" && message.suggestions && (
-                <div className="mt-3 space-y-2">
-                  {message.suggestions.map((suggestion, index) => (
-                    <Badge
-                      key={index}
-                      variant="outline"
-                      className="cursor-pointer border-border hover:border-brand-primary hover:bg-brand-primary/10 mr-2 mb-2 text-foreground hover:text-brand-primary"
-                      onClick={() => handleSuggestionClick(suggestion)}
-                    >
-                      {suggestion}
-                    </Badge>
-                  ))}
-                </div>
-              )}
             </div>
-          </div>
-        ))}
+          )}
 
-        {/* Typing Indicator */}
-        {isTyping && (
-          <div className="flex justify-start">
-            <Card className="glass-card border-border/50">
-              <CardContent className="p-3">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-brand-primary rounded-full animate-bounce"></div>
-                  <div
-                    className="w-2 h-2 bg-brand-accent rounded-full animate-bounce"
-                    style={{ animationDelay: "0.1s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 bg-brand-primary rounded-full animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+          <div ref={messagesEndRef} />
+        </div>
 
-        <div ref={messagesEndRef} />
+        {/* Input Area */}
+        <div className="p-4 border-t border-border/50">
+          <PromptInputBox
+            onSend={handleSendMessage}
+            isLoading={isTyping}
+            placeholder="Ask me anything about growing your influence..."
+          />
+        </div>
       </div>
-
-      {/* Input Area */}
-      <div className="p-4 border-t border-border/50">
-        <PromptInputBox
-          onSend={handleSendMessage}
-          isLoading={isTyping}
-          placeholder="Ask me anything about growing your influence..."
-        />
-      </div>
-
-      <BottomNavigation currentTab="agent" />
-    </div>
+    </AppLayout>
   );
 }

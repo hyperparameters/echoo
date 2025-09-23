@@ -4,7 +4,7 @@ import { Calendar, MapPin, Users, Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { BottomNavigation } from "@/components/bottom-navigation"
+import { AppLayout } from "@/components/app-layout"
 
 export default function EventsPage() {
   const upcomingEvents = [
@@ -41,7 +41,7 @@ export default function EventsPage() {
   ]
 
   return (
-    <div className="min-h-screen pb-20">
+    <AppLayout>
       {/* Header */}
       <div className="p-6 pb-4">
         <div className="flex items-center justify-between mb-2">
@@ -127,8 +127,6 @@ export default function EventsPage() {
           </Card>
         ))}
       </div>
-
-      <BottomNavigation currentTab="events" />
-    </div>
+    </AppLayout>
   )
 }

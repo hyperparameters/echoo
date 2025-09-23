@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Plus } from "lucide-react"
-import { BottomNavigation } from "@/components/bottom-navigation"
+import { AppLayout } from "@/components/app-layout"
 
 interface Collection {
   id: number
@@ -62,7 +62,7 @@ export default function CollectionsPage() {
       : mockCollections.filter((collection) => collection.category === activeFilter)
 
   return (
-    <div className="min-h-screen pb-20">
+    <AppLayout>
       {/* Header */}
       <div className="p-6 space-y-4">
         <div className="flex items-center justify-between">
@@ -132,8 +132,6 @@ export default function CollectionsPage() {
           </div>
         )}
       </div>
-
-      <BottomNavigation currentTab="collections" />
-    </div>
+    </AppLayout>
   )
 }

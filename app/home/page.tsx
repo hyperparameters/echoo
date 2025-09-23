@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Search, Filter, Plus, TrendingUp, MapPin, Sparkles, Heart, MessageCircle } from "lucide-react"
-import { BottomNavigation } from "@/components/bottom-navigation"
+import { AppLayout } from "@/components/app-layout"
 import PhotoAlbum from "react-photo-album"
 import { FileUploadDialog } from "@/components/file-upload-dialog"
 import { FilecoinUploadResponse, UploadService, GalleryItem } from "@/services/upload"
@@ -215,7 +215,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen pb-20">
+    <AppLayout>
       {/* Header */}
       <div className="p-6 space-y-4">
         <div className="flex items-center justify-between">
@@ -295,8 +295,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      <BottomNavigation currentTab="home" />
-
       {/* File Upload Dialog */}
       <FileUploadDialog
         isOpen={isUploadDialogOpen}
@@ -306,6 +304,6 @@ export default function HomePage() {
         maxFileSize={50 * 1024 * 1024} // 50MB
         acceptedFileTypes={['image/*']}
       />
-    </div>
+    </AppLayout>
   )
 }

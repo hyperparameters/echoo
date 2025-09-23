@@ -1,21 +1,30 @@
-"use client"
+"use client";
 
-import React, { useState, useRef, useCallback } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { Upload, X, FileImage, AlertCircle, Check } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
-import { Card, CardContent } from '@/components/ui/card'
-import { UploadService, FilecoinUploadResponse, UploadProgress } from '@/services/upload'
-import { UploadProgressBar, FileUploadProgress } from './upload-progress-bar'
+import React, { useState, useRef, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Upload, X, FileImage, AlertCircle, Check } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  UploadService,
+  FilecoinUploadResponse,
+  UploadProgress,
+} from "@/services/upload";
+import { UploadProgressBar, FileUploadProgress } from "./upload-progress-bar";
 
 interface FileUploadDialogProps {
-  isOpen: boolean
-  onClose: () => void
-  onUploadComplete?: (responses: FilecoinUploadResponse[]) => void
-  maxFiles?: number
-  maxFileSize?: number
-  acceptedFileTypes?: string[]
+  isOpen: boolean;
+  onClose: () => void;
+  onUploadComplete?: (responses: FilecoinUploadResponse[]) => void;
+  maxFiles?: number;
+  maxFileSize?: number;
+  acceptedFileTypes?: string[];
 }
 
 export function FileUploadDialog({
@@ -24,257 +33,291 @@ export function FileUploadDialog({
   onUploadComplete,
   maxFiles = 10,
   maxFileSize = 50 * 1024 * 1024, // 50MB
-  acceptedFileTypes = ['image/*']
+  acceptedFileTypes = ["image/*"],
 }: FileUploadDialogProps) {
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
-  const [uploadProgress, setUploadProgress] = useState<FileUploadProgress[]>([])
-  const [isUploading, setIsUploading] = useState(false)
-  const [uploadResults, setUploadResults] = useState<FilecoinUploadResponse[]>([])
-  const [showProgress, setShowProgress] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<FileUploadProgress[]>(
+    []
+  );
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadResults, setUploadResults] = useState<FilecoinUploadResponse[]>(
+    []
+  );
+  const [showProgress, setShowProgress] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetState = useCallback(() => {
-    setSelectedFiles([])
-    setUploadProgress([])
-    setIsUploading(false)
-    setUploadResults([])
-    setShowProgress(false)
-  }, [])
+    setSelectedFiles([]);
+    setUploadProgress([]);
+    setIsUploading(false);
+    setUploadResults([]);
+    setShowProgress(false);
+  }, []);
 
-  const handleFileSelect = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || [])
-    const validFiles = files.filter(file => {
-      // Check file type
-      const isValidType = acceptedFileTypes.some(type => {
-        if (type === 'image/*') return file.type.startsWith('image/')
-        if (type.includes('*')) {
-          const baseType = type.split('/')[0]
-          return file.type.startsWith(baseType)
-        }
-        return file.type === type
-      })
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = Array.from(event.target.files || []);
+      const validFiles = files.filter((file) => {
+        // Check file type
+        const isValidType = acceptedFileTypes.some((type) => {
+          if (type === "image/*") return file.type.startsWith("image/");
+          if (type.includes("*")) {
+            const baseType = type.split("/")[0];
+            return file.type.startsWith(baseType);
+          }
+          return file.type === type;
+        });
 
-      // Check file size
-      const isValidSize = file.size <= maxFileSize
+        // Check file size
+        const isValidSize = file.size <= maxFileSize;
 
-      return isValidType && isValidSize
-    })
+        return isValidType && isValidSize;
+      });
 
-    if (validFiles.length + selectedFiles.length > maxFiles) {
-      validFiles.splice(maxFiles - selectedFiles.length)
-    }
+      if (validFiles.length + selectedFiles.length > maxFiles) {
+        validFiles.splice(maxFiles - selectedFiles.length);
+      }
 
-    setSelectedFiles(prev => [...prev, ...validFiles])
-  }, [selectedFiles, acceptedFileTypes, maxFiles, maxFileSize])
+      setSelectedFiles((prev) => [...prev, ...validFiles]);
+    },
+    [selectedFiles, acceptedFileTypes, maxFiles, maxFileSize]
+  );
 
-  const handleDrop = useCallback((event: React.DragEvent) => {
-    event.preventDefault()
-    const files = Array.from(event.dataTransfer.files)
-    const mockEvent = {
-      target: { files: files }
-    } as React.ChangeEvent<HTMLInputElement>
-    handleFileSelect(mockEvent)
-  }, [handleFileSelect])
+  const handleDrop = useCallback(
+    (event: React.DragEvent) => {
+      event.preventDefault();
+      const files = Array.from(event.dataTransfer.files);
+      const mockEvent = {
+        target: { files: files },
+      } as React.ChangeEvent<HTMLInputElement>;
+      handleFileSelect(mockEvent);
+    },
+    [handleFileSelect]
+  );
 
   const removeFile = useCallback((index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index))
-  }, [])
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+  }, []);
 
   const getUserId = useCallback(() => {
     try {
-      const userData = localStorage.getItem("echooUser")
+      const userData = localStorage.getItem("echooUser");
       if (userData) {
-        const user = JSON.parse(userData)
-        return user.id || user.userId || 'anonymous-user'
+        const user = JSON.parse(userData);
+        return user.id || user.userId || "anonymous-user";
       }
     } catch (error) {
-      console.error('Failed to get user ID:', error)
+      console.error("Failed to get user ID:", error);
     }
-    return `user-${Date.now()}`
-  }, [])
+    return `user-${Date.now()}`;
+  }, []);
 
   const startUpload = useCallback(async () => {
-    if (selectedFiles.length === 0) return
+    if (selectedFiles.length === 0) return;
 
-    setIsUploading(true)
-    setShowProgress(true)
+    setIsUploading(true);
+    setShowProgress(true);
 
     // Initialize progress tracking
-    const initialProgress: FileUploadProgress[] = selectedFiles.map(file => ({
+    const initialProgress: FileUploadProgress[] = selectedFiles.map((file) => ({
       file,
       progress: 0,
-      status: 'pending' as const
-    }))
-    setUploadProgress(initialProgress)
+      status: "pending" as const,
+    }));
+    setUploadProgress(initialProgress);
 
-    const userId = getUserId()
-    const results: FilecoinUploadResponse[] = []
+    const userId = getUserId();
+    const results: FilecoinUploadResponse[] = [];
 
     try {
       // Upload files one by one
       for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i]
+        const file = selectedFiles[i];
 
         // Update status to uploading
-        setUploadProgress(prev =>
+        setUploadProgress((prev) =>
           prev.map((item, index) =>
-            index === i ? { ...item, status: 'uploading' as const } : item
+            index === i ? { ...item, status: "uploading" as const } : item
           )
-        )
+        );
 
         try {
           const result = await UploadService.uploadFile(
             file,
             userId,
             (progress: UploadProgress) => {
-              setUploadProgress(prev =>
+              setUploadProgress((prev) =>
                 prev.map((item, index) =>
-                  index === i ? { ...item, progress: progress.percentage } : item
+                  index === i
+                    ? { ...item, progress: progress.percentage }
+                    : item
                 )
-              )
+              );
             }
-          )
+          );
 
           // Mark as completed
-          setUploadProgress(prev =>
+          setUploadProgress((prev) =>
             prev.map((item, index) =>
               index === i
-                ? { ...item, status: 'completed' as const, progress: 100, response: result }
+                ? {
+                    ...item,
+                    status: "completed" as const,
+                    progress: 100,
+                    response: result,
+                  }
                 : item
             )
-          )
+          );
 
-          results.push(result)
+          results.push(result);
 
           // Store the upload response to localStorage immediately for gallery loading
           // This ensures photos are available even if the dialog is closed before all uploads complete
-          UploadService.storeUploadResponse(result)
-
+          UploadService.storeUploadResponse(result);
         } catch (error) {
           // Mark as error
-          const errorMessage = error instanceof Error ? error.message : 'Upload failed'
-          setUploadProgress(prev =>
+          const errorMessage =
+            error instanceof Error ? error.message : "Upload failed";
+          setUploadProgress((prev) =>
             prev.map((item, index) =>
               index === i
-                ? { ...item, status: 'error' as const, errorMessage }
+                ? { ...item, status: "error" as const, errorMessage }
                 : item
             )
-          )
-          console.error(`Failed to upload ${file.name}:`, error)
+          );
+          console.error(`Failed to upload ${file.name}:`, error);
         }
       }
 
-      setUploadResults(results)
+      setUploadResults(results);
 
       if (results.length > 0 && onUploadComplete) {
-        onUploadComplete(results)
+        onUploadComplete(results);
       }
-
     } catch (error) {
-      console.error('Upload process failed:', error)
+      console.error("Upload process failed:", error);
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }, [selectedFiles, onUploadComplete, getUserId])
+  }, [selectedFiles, onUploadComplete, getUserId]);
 
   const handleClose = useCallback(() => {
     if (!isUploading) {
-      resetState()
-      onClose()
+      resetState();
+      onClose();
     }
-  }, [isUploading, resetState, onClose])
+  }, [isUploading, resetState, onClose]);
 
-  const retryUpload = useCallback(async (fileIndex: number) => {
-    const file = selectedFiles[fileIndex]
-    if (!file) return
+  const retryUpload = useCallback(
+    async (fileIndex: number) => {
+      const file = selectedFiles[fileIndex];
+      if (!file) return;
 
-    const userId = getUserId()
+      const userId = getUserId();
 
-    // Reset the file status
-    setUploadProgress(prev =>
-      prev.map((item, index) =>
-        index === fileIndex
-          ? { ...item, status: 'uploading' as const, progress: 0, errorMessage: undefined }
-          : item
-      )
-    )
+      // Reset the file status
+      setUploadProgress((prev) =>
+        prev.map((item, index) =>
+          index === fileIndex
+            ? {
+                ...item,
+                status: "uploading" as const,
+                progress: 0,
+                errorMessage: undefined,
+              }
+            : item
+        )
+      );
 
-    try {
-      const result = await UploadService.uploadFile(
-        file,
-        userId,
-        (progress: UploadProgress) => {
-          setUploadProgress(prev =>
-            prev.map((item, index) =>
-              index === fileIndex ? { ...item, progress: progress.percentage } : item
-            )
+      try {
+        const result = await UploadService.uploadFile(
+          file,
+          userId,
+          (progress: UploadProgress) => {
+            setUploadProgress((prev) =>
+              prev.map((item, index) =>
+                index === fileIndex
+                  ? { ...item, progress: progress.percentage }
+                  : item
+              )
+            );
+          }
+        );
+
+        setUploadProgress((prev) =>
+          prev.map((item, index) =>
+            index === fileIndex
+              ? {
+                  ...item,
+                  status: "completed" as const,
+                  progress: 100,
+                  response: result,
+                }
+              : item
           )
-        }
-      )
+        );
 
-      setUploadProgress(prev =>
-        prev.map((item, index) =>
-          index === fileIndex
-            ? { ...item, status: 'completed' as const, progress: 100, response: result }
-            : item
-        )
-      )
+        setUploadResults((prev) => [...prev, result]);
 
-      setUploadResults(prev => [...prev, result])
-
-      // Store the retry upload response to localStorage for gallery loading
-      UploadService.storeUploadResponse(result)
-
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Upload failed'
-      setUploadProgress(prev =>
-        prev.map((item, index) =>
-          index === fileIndex
-            ? { ...item, status: 'error' as const, errorMessage }
-            : item
-        )
-      )
-    }
-  }, [selectedFiles, getUserId])
+        // Store the retry upload response to localStorage for gallery loading
+        UploadService.storeUploadResponse(result);
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Upload failed";
+        setUploadProgress((prev) =>
+          prev.map((item, index) =>
+            index === fileIndex
+              ? { ...item, status: "error" as const, errorMessage }
+              : item
+          )
+        );
+      }
+    },
+    [selectedFiles, getUserId]
+  );
 
   const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return '0 Bytes'
-    const k = 1024
-    const sizes = ['Bytes', 'KB', 'MB', 'GB']
-    const i = Math.floor(Math.log(bytes) / Math.log(k))
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
-  }
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
 
   return (
     <>
       <Dialog open={isOpen && !showProgress} onOpenChange={handleClose}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
-          <DialogHeader>
+        <DialogContent className="max-w-2xl h-[80vh] flex flex-col z-[60]">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="flex items-center space-x-2">
               <Upload className="w-5 h-5" />
               <span>Upload Files</span>
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="flex-1 flex flex-col space-y-4 overflow-hidden">
             {/* File Drop Zone */}
             <Card
-              className={`border-2 border-dashed transition-colors ${
+              className={`border-2 border-dashed transition-colors flex-1 ${
                 selectedFiles.length > 0
-                  ? 'border-primary/50 bg-primary/5'
-                  : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5'
+                  ? "border-primary/50 bg-primary/5"
+                  : "border-muted-foreground/25 hover:border-primary/50 hover:bg-primary/5"
               }`}
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onDragEnter={(e) => e.preventDefault()}
             >
-              <CardContent className="flex flex-col items-center justify-center py-12 px-6 text-center">
+              <CardContent className="flex flex-col items-center justify-center h-full px-6 text-center">
                 <div className="w-16 h-16 rounded-full bg-gradient-to-r from-primary to-secondary flex items-center justify-center mb-4">
                   <Upload className="w-8 h-8 text-white" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Choose files or drag them here</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  Choose files or drag them here
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  Upload up to {maxFiles} files, max {formatFileSize(maxFileSize)} each
+                  Upload up to {maxFiles} files, max{" "}
+                  {formatFileSize(maxFileSize)} each
                 </p>
                 <Button
                   onClick={() => fileInputRef.current?.click()}
@@ -287,7 +330,7 @@ export function FileUploadDialog({
                   ref={fileInputRef}
                   type="file"
                   multiple
-                  accept={acceptedFileTypes.join(',')}
+                  accept={acceptedFileTypes.join(",")}
                   onChange={handleFileSelect}
                   className="hidden"
                 />
@@ -296,9 +339,11 @@ export function FileUploadDialog({
 
             {/* Selected Files */}
             {selectedFiles.length > 0 && (
-              <div className="space-y-3">
-                <h4 className="font-medium">Selected Files ({selectedFiles.length})</h4>
-                <div className="max-h-48 overflow-y-auto space-y-2">
+              <div className="flex-1 flex flex-col space-y-3 min-h-0">
+                <h4 className="font-medium flex-shrink-0">
+                  Selected Files ({selectedFiles.length})
+                </h4>
+                <div className="flex-1 overflow-y-auto space-y-2 min-h-0">
                   {selectedFiles.map((file, index) => (
                     <motion.div
                       key={`${file.name}-${index}`}
@@ -310,8 +355,12 @@ export function FileUploadDialog({
                       <div className="flex items-center space-x-3">
                         <FileImage className="w-5 h-5 text-muted-foreground" />
                         <div>
-                          <p className="text-sm font-medium truncate max-w-48">{file.name}</p>
-                          <p className="text-xs text-muted-foreground">{formatFileSize(file.size)}</p>
+                          <p className="text-sm font-medium truncate max-w-48">
+                            {file.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatFileSize(file.size)}
+                          </p>
                         </div>
                       </div>
                       {!isUploading && (
@@ -331,16 +380,24 @@ export function FileUploadDialog({
             )}
 
             {/* Action Buttons */}
-            <div className="flex justify-end space-x-3 pt-4 border-t">
-              <Button variant="outline" onClick={handleClose} disabled={isUploading}>
-                {isUploading ? 'Uploading...' : 'Cancel'}
+            <div className="flex justify-end space-x-3 pt-4 border-t flex-shrink-0">
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                disabled={isUploading}
+              >
+                {isUploading ? "Uploading..." : "Cancel"}
               </Button>
               <Button
                 onClick={startUpload}
                 disabled={selectedFiles.length === 0 || isUploading}
                 className="bg-gradient-to-r from-primary to-secondary hover:opacity-90"
               >
-                {isUploading ? 'Uploading...' : `Upload ${selectedFiles.length} File${selectedFiles.length !== 1 ? 's' : ''}`}
+                {isUploading
+                  ? "Uploading..."
+                  : `Upload ${selectedFiles.length} File${
+                      selectedFiles.length !== 1 ? "s" : ""
+                    }`}
               </Button>
             </div>
           </div>
@@ -352,13 +409,13 @@ export function FileUploadDialog({
         <UploadProgressBar
           files={uploadProgress}
           onClose={() => {
-            setShowProgress(false)
-            resetState()
-            onClose()
+            setShowProgress(false);
+            resetState();
+            onClose();
           }}
           onRetry={retryUpload}
         />
       )}
     </>
-  )
+  );
 }

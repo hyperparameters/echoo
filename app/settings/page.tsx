@@ -25,7 +25,7 @@ import {
   LogOut,
   Trash2,
 } from "lucide-react"
-import { BottomNavigation } from "@/components/bottom-navigation"
+import { AppLayout } from "@/components/app-layout"
 
 export default function SettingsPage() {
   const [userInfo, setUserInfo] = useState({ fullName: "", instagramHandle: "" })
@@ -124,7 +124,7 @@ export default function SettingsPage() {
   ]
 
   return (
-    <div className="min-h-screen pb-20">
+    <AppLayout>
       {/* Header */}
       <div className="p-6">
         <h1 className="text-2xl font-bold text-foreground mb-6">Settings</h1>
@@ -207,8 +207,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-
-      <BottomNavigation currentTab="settings" />
-    </div>
+    </AppLayout>
   )
 }
