@@ -27,6 +27,33 @@ export class ApiClient {
     this.credentials = config.credentials || 'include';
   }
 
+  /**
+   * Adds basic authentication to the request config if credentials are available in localStorage
+   */
+  private addBasicAuthToRequest(config: RequestInit): void {
+    try {
+      // Get credentials from localStorage (stored separately from user data)
+      const credentialsData = localStorage.getItem('echooCredentials');
+      if (credentialsData) {
+        const credentials = JSON.parse(credentialsData);
+        if (credentials.email && credentials.password) {
+          const auth = btoa(`${credentials.email}:${credentials.password}`);
+          config.headers = {
+            ...config.headers,
+            'Authorization': `Basic ${auth}`,
+          };
+          console.log('✅ Basic auth added to request for user:', credentials.email);
+        } else {
+          console.warn('⚠️ Credentials found but missing email or password');
+        }
+      } else {
+        console.log('ℹ️ No credentials found in localStorage - request will be unauthenticated');
+      }
+    } catch (error) {
+      console.warn('Failed to add basic auth to request:', error);
+    }
+  }
+
   private async request<T>(
     endpoint: string,
     options: RequestInit = {}
@@ -43,21 +70,7 @@ export class ApiClient {
     };
 
     // Add basic auth from localStorage if available
-    const userData = localStorage.getItem('echooUser');
-    if (userData) {
-      try {
-        const user = JSON.parse(userData);
-        if (user.credentials) {
-          const auth = btoa(`${user.credentials.email}:${user.credentials.password}`);
-          config.headers = {
-            ...config.headers,
-            'Authorization': `Basic ${auth}`,
-          };
-        }
-      } catch (error) {
-        console.warn('Failed to parse user data from localStorage:', error);
-      }
-    }
+    this.addBasicAuthToRequest(config);
 
     try {
       const response = await fetch(url, config);
@@ -120,6 +133,28 @@ export class ApiClient {
         'Authorization': `Basic ${auth}`,
       },
     });
+  }
+
+  /**
+   * Public method to manually add basic auth to any request
+   * Useful for login/register endpoints that need explicit credentials
+   */
+  addBasicAuth(email: string, password: string): string {
+    return btoa(`${email}:${password}`);
+  }
+
+  /**
+   * Test method to verify that the interceptor is working
+   * This will make a test request and log whether auth was added
+   */
+  async testAuthInterceptor(): Promise<void> {
+    try {
+      console.log('🧪 Testing auth interceptor...');
+      await this.get('/api/v1/test-auth');
+    } catch (error) {
+      // Expected to fail since this endpoint probably doesn't exist
+      console.log('🧪 Auth interceptor test completed (expected to fail)');
+    }
   }
 }
 

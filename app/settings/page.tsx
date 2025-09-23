@@ -1,10 +1,10 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Switch } from "@/components/ui/switch"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ChevronRight,
   User,
@@ -24,30 +24,31 @@ import {
   Info,
   LogOut,
   Trash2,
-} from "lucide-react"
-import { AppLayout } from "@/components/app-layout"
+} from "lucide-react";
+import { AppLayout } from "@/components/app-layout";
+import { UserProfile } from "@/lib/api";
 
 export default function SettingsPage() {
-  const [userInfo, setUserInfo] = useState({ fullName: "", instagramHandle: "" })
+  const [userInfo, setUserInfo] = useState<UserProfile>();
   const [settings, setSettings] = useState({
     notifications: true,
     darkMode: true,
     autoBackup: true,
     personalization: true,
     contentSuggestions: true,
-  })
+  });
 
   useEffect(() => {
-    const userData = localStorage.getItem("echooUser")
+    const userData = localStorage.getItem("echooUser");
     if (userData) {
-      const user = JSON.parse(userData)
-      setUserInfo(user)
+      const user = JSON.parse(userData);
+      setUserInfo(user.user);
     }
-  }, [])
+  }, []);
 
   const toggleSetting = (key: keyof typeof settings) => {
-    setSettings((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
+    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   const settingSections = [
     {
@@ -89,7 +90,12 @@ export default function SettingsPage() {
           onToggle: () => toggleSetting("autoBackup"),
         },
         { icon: HardDrive, label: "Storage Management", hasChevron: true },
-        { icon: Download, label: "Download Quality", hasChevron: true, value: "High" },
+        {
+          icon: Download,
+          label: "Download Quality",
+          hasChevron: true,
+          value: "High",
+        },
       ],
     },
     {
@@ -102,7 +108,12 @@ export default function SettingsPage() {
           value: settings.personalization,
           onToggle: () => toggleSetting("personalization"),
         },
-        { icon: BarChart3, label: "Growth Insights Frequency", hasChevron: true, value: "Daily" },
+        {
+          icon: BarChart3,
+          label: "Growth Insights Frequency",
+          hasChevron: true,
+          value: "Daily",
+        },
         {
           icon: Lightbulb,
           label: "Content Suggestions",
@@ -121,7 +132,7 @@ export default function SettingsPage() {
         { icon: Info, label: "Version", hasChevron: true, value: "1.0.0" },
       ],
     },
-  ]
+  ];
 
   return (
     <AppLayout>
@@ -133,19 +144,25 @@ export default function SettingsPage() {
         <Card className="glass-card border-border/50 mb-6">
           <CardContent className="p-4 flex items-center space-x-4">
             <Avatar className="w-16 h-16">
-              <AvatarImage src="/placeholder.svg" alt="Profile" />
+              <AvatarImage src={userInfo?.selfie_url || ""} alt="Profile" />
               <AvatarFallback className="bg-primary/20 text-primary text-lg">
-                {userInfo.fullName
-                  .split(" ")
+                {userInfo?.username
+                  ?.split(" ")
                   .map((n) => n[0])
                   .join("")
                   .toUpperCase()}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h3 className="font-semibold text-foreground">{userInfo.fullName}</h3>
-              <p className="text-muted-foreground">{userInfo.instagramHandle}</p>
-              <Button variant="ghost" size="sm" className="text-primary hover:text-primary/80 p-0 h-auto mt-1">
+              <h3 className="font-semibold text-foreground">
+                {userInfo?.username}
+              </h3>
+              <p className="text-muted-foreground">{userInfo?.instagram_url}</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary hover:text-primary/80 p-0 h-auto mt-1"
+              >
                 Edit Profile
               </Button>
             </div>
@@ -156,14 +173,18 @@ export default function SettingsPage() {
         <div className="space-y-6">
           {settingSections.map((section, sectionIndex) => (
             <div key={sectionIndex} className="space-y-3">
-              <h2 className="text-lg font-semibold text-foreground">{section.title}</h2>
+              <h2 className="text-lg font-semibold text-foreground">
+                {section.title}
+              </h2>
               <Card className="glass-card border-border/50">
                 <CardContent className="p-0">
                   {section.items.map((item, itemIndex) => (
                     <div
                       key={itemIndex}
                       className={`flex items-center justify-between p-4 ${
-                        itemIndex < section.items.length - 1 ? "border-b border-border/50" : ""
+                        itemIndex < section.items.length - 1
+                          ? "border-b border-border/50"
+                          : ""
                       }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -171,9 +192,16 @@ export default function SettingsPage() {
                         <span className="text-foreground">{item.label}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        {item.value && <span className="text-sm text-muted-foreground">{item.value}</span>}
+                        {item.value && (
+                          <span className="text-sm text-muted-foreground">
+                            {item.value}
+                          </span>
+                        )}
                         {item.toggle ? (
-                          <Switch checked={item.value as boolean} onCheckedChange={item.onToggle} />
+                          <Switch
+                            checked={item.value as boolean}
+                            onCheckedChange={item.onToggle}
+                          />
                         ) : item.hasChevron ? (
                           <ChevronRight className="w-4 h-4 text-muted-foreground" />
                         ) : null}
@@ -187,7 +215,9 @@ export default function SettingsPage() {
 
           {/* Account Actions */}
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground">Account Actions</h2>
+            <h2 className="text-lg font-semibold text-foreground">
+              Account Actions
+            </h2>
             <div className="space-y-3">
               <Button
                 variant="outline"
@@ -208,5 +238,5 @@ export default function SettingsPage() {
         </div>
       </div>
     </AppLayout>
-  )
+  );
 }

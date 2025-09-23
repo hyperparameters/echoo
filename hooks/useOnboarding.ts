@@ -5,10 +5,12 @@ import { useRouter } from 'next/navigation';
 import {
   localStorageHelpers,
   isOnboardingComplete,
+  authApi,
   type UserProfile,
-  type OnboardingStep,
+  OnboardingStep,
   type OnboardingState,
-  type LocalUserData
+  type LocalUserData,
+  type LoginCredentials
 } from '@/lib/api';
 
 export function useOnboarding() {
@@ -17,33 +19,78 @@ export function useOnboarding() {
     isLoggedIn: false,
     user: null,
     hasCompletedOnboarding: false,
-    currentStep: 'login' as OnboardingStep,
+    currentStep: OnboardingStep.LOGIN,
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // Initialize onboarding state from localStorage
+  // Initialize onboarding state with auto-login check
   useEffect(() => {
-    const initializeOnboarding = () => {
+    const initializeOnboarding = async () => {
       try {
+        // Check if we have stored credentials
+        const credentials = localStorageHelpers.getCredentials();
         const userData = localStorageHelpers.getUserData();
 
-        if (userData?.user) {
-          const user = userData.user;
-          const completedOnboarding = isOnboardingComplete(user);
+        if (credentials && credentials.email && credentials.password) {
+          console.log('🔄 Found stored credentials, attempting auto-login...');
 
-          setOnboardingState({
-            isLoggedIn: true,
-            user,
-            hasCompletedOnboarding: completedOnboarding,
-            currentStep: determinCurrentStep(user, completedOnboarding),
-          });
-        } else {
-          // No user data, start with login
+          try {
+            // Attempt to login with stored credentials
+            const loginResponse = await authApi.login(credentials);
+            console.log('✅ Auto-login successful');
+
+            // Update stored user data with fresh data from server
+            localStorageHelpers.saveUserData(loginResponse, credentials);
+
+            const user = loginResponse.user;
+            const completedOnboarding = isOnboardingComplete(user);
+            const nextStep = determinCurrentStep(user, completedOnboarding);
+
+            setOnboardingState({
+              isLoggedIn: true,
+              user,
+              hasCompletedOnboarding: completedOnboarding,
+              currentStep: nextStep,
+            });
+
+            // Redirect based on onboarding completion
+            if (completedOnboarding) {
+              console.log('🏠 Redirecting to home - onboarding complete');
+              router.push('/home');
+            } else {
+              console.log('📝 Redirecting to onboarding - profile incomplete');
+              // Stay on current page to show onboarding step
+            }
+          } catch (loginError) {
+            console.error('❌ Auto-login failed:', loginError);
+            // Clear invalid credentials and redirect to login
+            localStorageHelpers.clearUserData();
+            setOnboardingState({
+              isLoggedIn: false,
+              user: null,
+              hasCompletedOnboarding: false,
+              currentStep: OnboardingStep.LOGIN,
+            });
+          }
+        } else if (userData?.user) {
+          // We have user data but no credentials - this shouldn't happen normally
+          // but we'll handle it gracefully
+          console.log('⚠️ Found user data but no credentials, clearing data');
+          localStorageHelpers.clearUserData();
           setOnboardingState({
             isLoggedIn: false,
             user: null,
             hasCompletedOnboarding: false,
-            currentStep: 'login',
+            currentStep: OnboardingStep.LOGIN,
+          });
+        } else {
+          // No stored data, start with login
+          console.log('ℹ️ No stored credentials found, starting with login');
+          setOnboardingState({
+            isLoggedIn: false,
+            user: null,
+            hasCompletedOnboarding: false,
+            currentStep: OnboardingStep.LOGIN,
           });
         }
       } catch (error) {
@@ -54,7 +101,7 @@ export function useOnboarding() {
           isLoggedIn: false,
           user: null,
           hasCompletedOnboarding: false,
-          currentStep: 'login',
+          currentStep: OnboardingStep.LOGIN,
         });
       } finally {
         setIsLoading(false);
@@ -62,26 +109,26 @@ export function useOnboarding() {
     };
 
     initializeOnboarding();
-  }, []);
+  }, [router]);
 
   // Determine the current step based on user data and completion status
   const determinCurrentStep = (user: UserProfile, hasCompleted: boolean): OnboardingStep => {
     if (hasCompleted) {
-      return 'complete';
+      return OnboardingStep.COMPLETE;
     }
 
     // Check what steps are missing
     if (!user.selfie_url) {
-      return 'selfie';
+      return OnboardingStep.SELFIE;
     }
 
     // Check if basic profile info is missing
     if (!user.email && !user.instagram_url && !user.description) {
-      return 'details';
+      return OnboardingStep.DETAILS;
     }
 
     // If we have basic info but onboarding isn't complete, show welcome
-    return 'welcome';
+    return OnboardingStep.WELCOME;
   };
 
   // Handle successful login
@@ -98,14 +145,17 @@ export function useOnboarding() {
 
     // If onboarding is complete, redirect to home
     if (completedOnboarding) {
+      console.log('🏠 Manual login successful - redirecting to home');
       router.push('/home');
+    } else {
+      console.log('📝 Manual login successful - staying on onboarding');
     }
   };
 
   // Handle selfie upload completion
   const handleSelfieCompleted = (updatedUser: UserProfile) => {
     const completedOnboarding = isOnboardingComplete(updatedUser);
-    const nextStep = completedOnboarding ? 'welcome' : 'details';
+    const nextStep = completedOnboarding ? OnboardingStep.WELCOME : OnboardingStep.DETAILS;
 
     setOnboardingState(prev => ({
       ...prev,
@@ -119,7 +169,7 @@ export function useOnboarding() {
   const handleSelfieSkipped = () => {
     setOnboardingState(prev => ({
       ...prev,
-      currentStep: 'details',
+      currentStep: OnboardingStep.DETAILS,
     }));
   };
 
@@ -131,7 +181,7 @@ export function useOnboarding() {
       ...prev,
       user: updatedUser,
       hasCompletedOnboarding: completedOnboarding,
-      currentStep: 'welcome',
+      currentStep: OnboardingStep.WELCOME,
     }));
 
     // Update localStorage with onboarding completion
@@ -150,7 +200,7 @@ export function useOnboarding() {
   const handleWelcomeCompleted = () => {
     setOnboardingState(prev => ({
       ...prev,
-      currentStep: 'complete',
+      currentStep: OnboardingStep.COMPLETE,
       hasCompletedOnboarding: true,
     }));
 
@@ -175,7 +225,7 @@ export function useOnboarding() {
       isLoggedIn: false,
       user: null,
       hasCompletedOnboarding: false,
-      currentStep: 'login',
+      currentStep: OnboardingStep.LOGIN,
     });
     router.push('/');
   };
@@ -185,19 +235,19 @@ export function useOnboarding() {
     const { currentStep } = onboardingState;
 
     switch (currentStep) {
-      case 'selfie':
+      case OnboardingStep.SELFIE:
         handleSelfieSkipped();
         break;
-      case 'details':
+      case OnboardingStep.DETAILS:
         // Skip to welcome if we have minimum info
         if (onboardingState.user) {
           setOnboardingState(prev => ({
             ...prev,
-            currentStep: 'welcome',
+            currentStep: OnboardingStep.WELCOME,
           }));
         }
         break;
-      case 'welcome':
+      case OnboardingStep.WELCOME:
         handleWelcomeCompleted();
         break;
     }
@@ -210,25 +260,25 @@ export function useOnboarding() {
     if (!user) return;
 
     switch (currentStep) {
-      case 'login':
+      case OnboardingStep.LOGIN:
         setOnboardingState(prev => ({
           ...prev,
-          currentStep: 'selfie',
+          currentStep: OnboardingStep.SELFIE,
         }));
         break;
-      case 'selfie':
+      case OnboardingStep.SELFIE:
         setOnboardingState(prev => ({
           ...prev,
-          currentStep: 'details',
+          currentStep: OnboardingStep.DETAILS,
         }));
         break;
-      case 'details':
+      case OnboardingStep.DETAILS:
         setOnboardingState(prev => ({
           ...prev,
-          currentStep: 'welcome',
+          currentStep: OnboardingStep.WELCOME,
         }));
         break;
-      case 'welcome':
+      case OnboardingStep.WELCOME:
         handleWelcomeCompleted();
         break;
     }

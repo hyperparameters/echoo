@@ -9,10 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
 import { useLogin, useRegister } from "@/lib/api";
-import type { LoginCredentials, UserCreate } from "@/lib/api";
+import type { LoginCredentials, UserCreate, UserProfile } from "@/lib/api";
 
 interface LoginComponentProps {
-  onLoginSuccess: () => void;
+  onLoginSuccess: (user: UserProfile) => void;
 }
 
 export function LoginComponent({ onLoginSuccess }: LoginComponentProps) {
@@ -38,8 +38,8 @@ export function LoginComponent({ onLoginSuccess }: LoginComponentProps) {
     if (!loginForm.email || !loginForm.password) return;
 
     try {
-      await loginMutation.mutateAsync(loginForm);
-      onLoginSuccess();
+      const response = await loginMutation.mutateAsync(loginForm);
+      onLoginSuccess(response.user);
     } catch (error) {
       console.error("Login failed:", error);
     }
@@ -62,12 +62,12 @@ export function LoginComponent({ onLoginSuccess }: LoginComponentProps) {
       });
 
       // After successful registration, auto-login
-      await loginMutation.mutateAsync({
+      const loginResponse = await loginMutation.mutateAsync({
         email: registerForm.username, // Assuming username is email for login
         password: registerForm.password,
       });
 
-      onLoginSuccess();
+      onLoginSuccess(loginResponse.user);
     } catch (error) {
       console.error("Registration failed:", error);
     }

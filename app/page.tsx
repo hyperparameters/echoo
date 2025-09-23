@@ -1,16 +1,17 @@
 "use client";
 
-import { useEffect } from 'react';
+import { useEffect } from "react";
 import Image from "next/image";
 import { Ripple } from "@/components/magicui/ripple";
-import { Loader2 } from 'lucide-react';
-import { useOnboarding } from '@/hooks/useOnboarding';
+import { Loader2 } from "lucide-react";
+import { useOnboarding } from "@/hooks/useOnboarding";
+import { OnboardingStep } from "@/lib/api";
 import {
   LoginComponent,
   SelfieComponent,
   DetailsComponent,
   WelcomeComponent,
-} from '@/components/onboarding';
+} from "@/components/onboarding";
 
 export default function OnboardingPage() {
   const {
@@ -53,10 +54,10 @@ export default function OnboardingPage() {
   // Render appropriate component based on onboarding state
   const renderOnboardingStep = () => {
     switch (currentStep) {
-      case 'login':
+      case OnboardingStep.LOGIN:
         return <LoginComponent onLoginSuccess={handleLoginSuccess} />;
 
-      case 'selfie':
+      case OnboardingStep.SELFIE:
         return user ? (
           <SelfieComponent
             user={user}
@@ -65,7 +66,7 @@ export default function OnboardingPage() {
           />
         ) : null;
 
-      case 'details':
+      case OnboardingStep.DETAILS:
         return user ? (
           <DetailsComponent
             user={user}
@@ -73,12 +74,9 @@ export default function OnboardingPage() {
           />
         ) : null;
 
-      case 'welcome':
+      case OnboardingStep.WELCOME:
         return user ? (
-          <WelcomeComponent
-            user={user}
-            onGetStarted={handleWelcomeCompleted}
-          />
+          <WelcomeComponent user={user} onGetStarted={handleWelcomeCompleted} />
         ) : null;
 
       default:
@@ -94,7 +92,7 @@ export default function OnboardingPage() {
       </div>
 
       {/* Background Photos Grid (only show for login step) */}
-      {currentStep === 'login' && (
+      {currentStep === "login" && (
         <div className="absolute top-8 left-1/2 transform -translate-x-1/2 w-full max-w-sm z-0 opacity-20">
           <div className="grid grid-cols-3 gap-3">
             {profilePhotos.map((photo, index) => (
@@ -114,7 +112,7 @@ export default function OnboardingPage() {
       )}
 
       {/* Logo (show for all steps except welcome which has its own) */}
-      {currentStep !== 'welcome' && (
+      {currentStep !== OnboardingStep.WELCOME && (
         <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-10">
           <div className="w-24 h-24 flex items-center justify-center">
             <Image
@@ -134,15 +132,35 @@ export default function OnboardingPage() {
       </div>
 
       {/* Progress Indicator */}
-      {isLoggedIn && currentStep !== 'complete' && currentStep !== 'welcome' && (
-        <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
-          <div className="flex space-x-2">
-            <div className={`w-2 h-2 rounded-full transition-all ${currentStep === 'selfie' ? 'bg-primary w-6' : 'bg-muted-foreground/30'}`} />
-            <div className={`w-2 h-2 rounded-full transition-all ${currentStep === 'details' ? 'bg-primary w-6' : 'bg-muted-foreground/30'}`} />
-            <div className={`w-2 h-2 rounded-full transition-all ${currentStep === 'welcome' ? 'bg-primary w-6' : 'bg-muted-foreground/30'}`} />
+      {isLoggedIn &&
+        currentStep !== OnboardingStep.COMPLETE &&
+        currentStep !== OnboardingStep.LOGIN && (
+          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
+            <div className="flex space-x-2">
+              <div
+                className={`w-2 h-2 rounded-full transition-all ${
+                  currentStep === OnboardingStep.SELFIE
+                    ? "bg-primary w-6"
+                    : "bg-muted-foreground/30"
+                }`}
+              />
+              <div
+                className={`w-2 h-2 rounded-full transition-all ${
+                  currentStep === OnboardingStep.DETAILS
+                    ? "bg-primary w-6"
+                    : "bg-muted-foreground/30"
+                }`}
+              />
+              <div
+                className={`w-2 h-2 rounded-full transition-all ${
+                  currentStep === OnboardingStep.WELCOME
+                    ? "bg-primary w-6"
+                    : "bg-muted-foreground/30"
+                }`}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 }
