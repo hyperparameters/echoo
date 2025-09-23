@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -33,6 +34,7 @@ interface ContentPost {
 }
 
 export default function HomePage() {
+  const router = useRouter();
   const [userName, setUserName] = useState("");
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [apiImages, setApiImages] = useState<ImageListResponse[]>([]);
@@ -135,7 +137,7 @@ export default function HomePage() {
       category: "Events",
       gradient: "from-teal-400 via-cyan-400 to-blue-500",
       bgColor: "bg-gradient-to-br from-teal-400/20 to-cyan-500/20",
-      action: () => console.log("Events clicked"),
+      action: () => router.push("/events"),
     },
     {
       icon: Sparkles,
@@ -143,7 +145,7 @@ export default function HomePage() {
       category: "AI",
       gradient: "from-pink-400 via-purple-400 to-indigo-500",
       bgColor: "bg-gradient-to-br from-pink-400/20 to-purple-500/20",
-      action: () => console.log("AI Insights clicked"),
+      action: () => router.push("/agent"),
     },
   ];
 
