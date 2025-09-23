@@ -14,8 +14,7 @@ import {
   MessageCircle,
 } from "lucide-react";
 import { AppLayout } from "@/components/app-layout";
-import { MasonryPhotoAlbum } from "react-photo-album";
-import "react-photo-album/masonry.css";
+import { PhotoGallery, Photo } from "@/components/photo-gallery";
 import { FileUploadDialog } from "@/components/file-upload-dialog";
 import { FilecoinUploadResponse, UploadService } from "@/services/upload";
 import { imagesApi } from "@/lib/api/images";
@@ -31,18 +30,6 @@ interface ContentPost {
   timestamp: string;
   isUploaded?: boolean;
   isApiImage?: boolean;
-}
-
-/**
- * Photo interface for react-photo-album
- * @see https://github.com/igordanchenko/react-photo-album#photo-object
- */
-interface Photo {
-  src: string;
-  width: number;
-  height: number;
-  alt?: string;
-  key?: string;
 }
 
 export default function HomePage() {
@@ -252,104 +239,15 @@ export default function HomePage() {
             </h2>
           </div>
 
-          <div className="w-full">
-            {isLoadingImages ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-muted-foreground">Loading images...</div>
-              </div>
-            ) : photos.length === 0 ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-muted-foreground">
-                  No images found. Upload some content to get started!
-                </div>
-              </div>
-            ) : (
-              <MasonryPhotoAlbum
-                photos={photos}
-                columns={2}
-                spacing={12}
-                padding={4}
-                breakpoints={[300, 600, 900, 1200]}
-                sizes={{
-                  size: "calc(100vw - 32px)",
-                  sizes: [
-                    {
-                      viewport: "(max-width: 767px)",
-                      size: "calc(100vw - 32px)",
-                    },
-                    {
-                      viewport: "(max-width: 1279px)",
-                      size: "calc(100vw - 288px)",
-                    },
-                    { viewport: "(min-width: 1280px)", size: "1200px" },
-                  ],
-                }}
-                componentsProps={{
-                  image: {
-                    loading: "lazy",
-                    decoding: "async",
-                    style: { borderRadius: "8px" },
-                  },
-                }}
-                render={{
-                  photo: ({ onClick }: any, { photo, width, height }: any) => {
-                    const postData = allContent.find(
-                      (post) => post.image === photo.src
-                    );
-
-                    return (
-                      <div className="group cursor-pointer" onClick={onClick}>
-                        <div className="relative overflow-hidden">
-                          <img
-                            src={photo.src}
-                            alt={photo.alt || ""}
-                            width={width}
-                            height={height}
-                            loading="lazy"
-                            decoding="async"
-                            style={{
-                              width: "100%",
-                              height: "auto",
-                              borderRadius: "8px",
-                            }}
-                          />
-
-                          {/* Overlay with post info */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                            <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                              <p className="text-sm font-medium line-clamp-2 mb-2">
-                                {postData?.caption}
-                              </p>
-                              <div className="flex items-center justify-between text-xs">
-                                <div className="flex items-center space-x-3">
-                                  <div className="flex items-center space-x-1">
-                                    <Heart className="w-3 h-3" />
-                                    <span>
-                                      {postData?.likes.toLocaleString()}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center space-x-1">
-                                    <MessageCircle className="w-3 h-3" />
-                                    <span>{postData?.comments}</span>
-                                  </div>
-                                </div>
-                                <span className="text-white/80">
-                                  {postData?.timestamp}
-                                </span>
-                              </div>
-                              <div className="text-xs text-white/70 mt-1">
-                                {postData?.location}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  },
-                }}
-              />
-            )}
-          </div>
+          <PhotoGallery
+            photos={photos}
+            imageData={allContent}
+            isLoading={isLoadingImages}
+            emptyMessage="No images found. Upload some content to get started!"
+            showStats={true}
+            showLocation={true}
+            showTimestamp={true}
+          />
         </div>
       </div>
 

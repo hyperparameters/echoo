@@ -185,3 +185,23 @@ export interface SelfieData {
   file: File | null;
   preview: string | null;
 }
+
+// Event matched images response type
+export interface EventMatchedImageResponse {
+  id: number;
+  name: string;
+  user_id: number | null;
+  fotoowl_image_id: number;
+  fotoowl_url: string | null;
+  filecoin_url: string;
+  filecoin_cid: string;
+  size: number;
+  height: number;
+  width: number;
+  description: string | null;
+  image_encoding: string | null;
+  event_id: number;
+  image_url: string;
+  created_at: string;
+  updated_at: string;
+}

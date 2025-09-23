@@ -1,7 +1,7 @@
 // Events API functions
 
 import { apiClient } from './client';
-import type { EventResponse, EventRegistrationRequest, EventRegistrationResponse, RegisteredEventResponse } from './types';
+import type { EventResponse, EventRegistrationRequest, EventRegistrationResponse, RegisteredEventResponse, EventMatchedImageResponse } from './types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // API Functions
@@ -22,6 +22,10 @@ export const eventsApi = {
 
     getRegisteredEvents: async (): Promise<RegisteredEventResponse[]> => {
         return apiClient.get<RegisteredEventResponse[]>('/api/v1/my-registered-events');
+    },
+
+    getEventMatchedImages: async (eventId: number): Promise<EventMatchedImageResponse[]> => {
+        return apiClient.get<EventMatchedImageResponse[]>(`/api/v1/get-event-matched-image-list?event_id=${eventId}`);
     },
 };
 
@@ -65,5 +69,15 @@ export const useRegisterEvent = () => {
             // Also invalidate registered events to update the count
             queryClient.invalidateQueries({ queryKey: ['events', 'registered'] });
         },
+    });
+};
+
+// React Query hook for getting event matched images
+export const useEventMatchedImages = (eventId: number) => {
+    return useQuery({
+        queryKey: ['events', eventId, 'matched-images'],
+        queryFn: () => eventsApi.getEventMatchedImages(eventId),
+        enabled: !!eventId,
+        staleTime: 5 * 60 * 1000, // 5 minutes
     });
 };

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Calendar, MapPin, Users, Plus, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { JoinEventDialog } from "@/components/join-event-dialog";
 
 export default function EventsPage() {
+  const router = useRouter();
   const { data: events, isLoading, error } = useEventList();
   const {
     data: registeredEvents,
@@ -44,6 +46,11 @@ export default function EventsPage() {
   const handleDialogClose = () => {
     setJoinDialogOpen(false);
     setSelectedEvent(null);
+  };
+
+  // Handle view gallery navigation
+  const handleViewGallery = (eventId: number) => {
+    router.push(`/gallery/${eventId}`);
   };
 
   return (
@@ -199,9 +206,6 @@ export default function EventsPage() {
                       >
                         Join Event
                       </Button>
-                      <Button size="sm" variant="brand-outline">
-                        Learn More
-                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -319,7 +323,7 @@ export default function EventsPage() {
                         variant="gradient"
                         className="flex-1"
                         onClick={() =>
-                          window.open(registeredEvent.redirect_url, "_blank")
+                          handleViewGallery(registeredEvent.event_id)
                         }
                       >
                         <ExternalLink className="w-4 h-4 mr-2" />
