@@ -129,7 +129,7 @@ export default function HomePage() {
     {
       icon: Plus,
       label: "Add Content",
-      category: "Programming",
+      category: "Content Creation",
       gradient: "from-blue-500 via-purple-500 to-pink-500",
       bgColor: "bg-gradient-to-br from-blue-500/20 to-purple-500/20",
       action: () => setIsUploadDialogOpen(true),
@@ -137,7 +137,7 @@ export default function HomePage() {
     {
       icon: TrendingUp,
       label: "View Analytics",
-      category: "Design",
+      category: "Analytics",
       gradient: "from-yellow-400 via-orange-400 to-red-500",
       bgColor: "bg-gradient-to-br from-yellow-400/20 to-orange-500/20",
       action: () => console.log("Analytics clicked"),
@@ -145,7 +145,7 @@ export default function HomePage() {
     {
       icon: MapPin,
       label: "Find Events",
-      category: "Digital Art",
+      category: "Events",
       gradient: "from-teal-400 via-cyan-400 to-blue-500",
       bgColor: "bg-gradient-to-br from-teal-400/20 to-cyan-500/20",
       action: () => console.log("Events clicked"),
@@ -153,7 +153,7 @@ export default function HomePage() {
     {
       icon: Sparkles,
       label: "AI Insights",
-      category: "Copywriting",
+      category: "AI",
       gradient: "from-pink-400 via-purple-400 to-indigo-500",
       bgColor: "bg-gradient-to-br from-pink-400/20 to-purple-500/20",
       action: () => console.log("AI Insights clicked"),
@@ -250,13 +250,6 @@ export default function HomePage() {
             <h2 className="text-lg font-semibold text-foreground">
               Your Content
             </h2>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-primary hover:text-primary/80"
-            >
-              View All
-            </Button>
           </div>
 
           <div className="w-full">

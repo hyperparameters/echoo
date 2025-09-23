@@ -4,6 +4,7 @@ export * from './types';
 export * from './client';
 export * from './auth';
 export * from './images';
+export * from './events';
 
 // Re-export commonly used functions
 export {
@@ -14,3 +15,11 @@ export {
   uploadImageFile,
   createSelfieImage,
 } from './images';
+
+export {
+  eventsApi,
+  useEventList,
+  useEvent,
+  useRegisteredEvents,
+  useRegisterEvent,
+} from './events';

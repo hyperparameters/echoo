@@ -88,16 +88,19 @@ export interface EventResponse {
   name: string;
   description?: string | null;
   cover_image_url?: string | null;
+  cover_image_height?: number | null;
+  cover_image_width?: number | null;
   event_date?: string | null;
   fotoowl_event_id?: number | null;
   fotoowl_event_key?: string | null;
+  location?: string | null;
+  category?: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface EventRegistrationRequest {
   event_id: number;
-  key: string;
 }
 
 export interface EventRegistrationResponse {
@@ -109,6 +112,25 @@ export interface EventRegistrationResponse {
   redirect_url?: string | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface RegisteredEventResponse {
+  registration_id: number;
+  request_id: number;
+  request_key: string;
+  redirect_url: string;
+  registration_created_at: string;
+  event_id: number;
+  event_name: string;
+  event_description: string;
+  event_cover_image_url: string;
+  event_cover_image_height?: number | null;
+  event_cover_image_width?: number | null;
+  event_location?: string | null;
+  event_category?: string | null;
+  event_date: string;
+  fotoowl_event_id: number;
+  fotoowl_event_key: string;
 }
 
 export interface HTTPValidationError {
