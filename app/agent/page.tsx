@@ -3,9 +3,9 @@
 import { useState, useEffect, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Sparkles } from "lucide-react";
 import { BottomNavigation } from "@/components/bottom-navigation";
 import { PromptInputBox } from "@/components/prompt-input-box";
+import { Logo } from "@/components/logo";
 
 interface Message {
   id: number;
@@ -22,7 +22,7 @@ export default function AgentPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const userData = localStorage.getItem("echooUser");
       if (userData) {
         const user = JSON.parse(userData);
@@ -144,7 +144,7 @@ export default function AgentPage() {
       <div className="p-6 border-b border-border/50">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 rounded-full bg-gradient-to-r from-brand-primary/20 to-brand-accent/20 flex items-center justify-center">
-            <Sparkles className="w-5 h-5 text-brand-primary" />
+            <Logo variant="icon" width={56} height={56} />
           </div>
           <div>
             <h1 className="text-xl font-bold text-foreground">

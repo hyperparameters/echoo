@@ -112,8 +112,8 @@ export default function HomePage() {
 
   // Combine uploaded gallery items with mock posts
   const allContent = [
-    ...galleryItems.map((item, index) => ({
-      id: `uploaded-${index}`,
+    ...galleryItems.map((item) => ({
+      id: item.id, // Use the unique piece CID as ID
       image: item.image_url,
       caption: item.description,
       likes: item.likes,

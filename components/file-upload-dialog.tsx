@@ -146,6 +146,10 @@ export function FileUploadDialog({
 
           results.push(result)
 
+          // Store the upload response to localStorage immediately for gallery loading
+          // This ensures photos are available even if the dialog is closed before all uploads complete
+          UploadService.storeUploadResponse(result)
+
         } catch (error) {
           // Mark as error
           const errorMessage = error instanceof Error ? error.message : 'Upload failed'
@@ -218,6 +222,9 @@ export function FileUploadDialog({
 
       setUploadResults(prev => [...prev, result])
 
+      // Store the retry upload response to localStorage for gallery loading
+      UploadService.storeUploadResponse(result)
+
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Upload failed'
       setUploadProgress(prev =>
@@ -240,7 +247,7 @@ export function FileUploadDialog({
 
   return (
     <>
-      <Dialog open={isOpen} onOpenChange={handleClose}>
+      <Dialog open={isOpen && !showProgress} onOpenChange={handleClose}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center space-x-2">
@@ -346,9 +353,8 @@ export function FileUploadDialog({
           files={uploadProgress}
           onClose={() => {
             setShowProgress(false)
-            if (!isUploading) {
-              handleClose()
-            }
+            resetState()
+            onClose()
           }}
           onRetry={retryUpload}
         />

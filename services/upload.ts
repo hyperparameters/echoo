@@ -1,13 +1,9 @@
 export interface FilecoinUploadResponse {
-  success: boolean;
-  pieceCid: {
-    "/": string;
-  };
-  fileName: string;
-  fileSize: number;
-  cdnUrl: string;
-  userId: string;
-  timestamp: string;
+  name: string;
+  size: number;
+  cid: string;
+  filecoin_url: string;
+  user_id: string;
 }
 
 export interface GalleryItem {
@@ -109,8 +105,8 @@ export class UploadService {
           onFileComplete(i, result);
         }
 
-        // Store in localStorage
-        this.storeUploadResponse(result);
+        // Note: localStorage storage is handled by the calling component
+        // to allow for better upload progress tracking and error handling
 
       } catch (error) {
         console.error(`Failed to upload file ${files[i].name}:`, error);
@@ -123,8 +119,8 @@ export class UploadService {
 
   static transformToGalleryItem(response: FilecoinUploadResponse): GalleryItem {
     // Generate a meaningful description based on file name
-    const fileName = response.fileName.replace(/^piece-/, '').replace(/\.[^/.]+$/, '');
-    const fileExtension = response.fileName.split('.').pop()?.toUpperCase() || 'IMAGE';
+    const fileName = response.name.replace(/^piece-/, '').replace(/\.[^/.]+$/, '');
+    const fileExtension = response.name.split('.').pop()?.toUpperCase() || 'IMAGE';
 
     // Generate some sample metadata (you can customize this logic)
     const descriptions = [
@@ -153,12 +149,12 @@ export class UploadService {
     const randomLocation = locations[Math.floor(Math.random() * locations.length)];
 
     return {
-      id: response.pieceCid['/'],
-      image_url: response.cdnUrl,
-      name: response.fileName,
-      size: response.fileSize,
+      id: response.cid,
+      image_url: response.filecoin_url,
+      name: response.name,
+      size: response.size,
       description: randomDescription,
-      created_at: response.timestamp,
+      created_at: new Date().toISOString(), // Generate current timestamp since it's not provided
       likes: Math.floor(Math.random() * 2000) + 100, // Random likes between 100-2100
       comments: Math.floor(Math.random() * 50) + 5, // Random comments between 5-55
       location: randomLocation
@@ -167,14 +163,16 @@ export class UploadService {
 
   static storeUploadResponse(response: FilecoinUploadResponse): void {
     try {
-      // Store the raw upload response
+      // Transform to gallery item first
+      const galleryItem = this.transformToGalleryItem(response);
+
+      // Store the raw upload response for potential future use
       const existingUploads = this.getStoredUploads();
       const updatedUploads = [response, ...existingUploads];
       const trimmedUploads = updatedUploads.slice(0, 50);
       localStorage.setItem('echoo_uploads', JSON.stringify(trimmedUploads));
 
-      // Transform and store as gallery item
-      const galleryItem = this.transformToGalleryItem(response);
+      // Store as gallery item (this is what the home page uses)
       this.storeGalleryItem(galleryItem);
     } catch (error) {
       console.error('Failed to store upload response:', error);
