@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -26,10 +26,10 @@ import {
   Trash2,
 } from "lucide-react";
 import { AppLayout } from "@/components/app-layout";
-import { UserProfile } from "@/lib/api";
+import { useAuth } from "@/stores/authStore";
 
 export default function SettingsPage() {
-  const [userInfo, setUserInfo] = useState<UserProfile>();
+  const { user: userInfo, logout } = useAuth();
   const [settings, setSettings] = useState({
     notifications: true,
     darkMode: true,
@@ -38,13 +38,6 @@ export default function SettingsPage() {
     contentSuggestions: true,
   });
 
-  useEffect(() => {
-    const userData = localStorage.getItem("echooUser");
-    if (userData) {
-      const user = JSON.parse(userData);
-      setUserInfo(user.user);
-    }
-  }, []);
 
   const toggleSetting = (key: keyof typeof settings) => {
     setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -222,6 +215,7 @@ export default function SettingsPage() {
               <Button
                 variant="outline"
                 className="w-full justify-start border-border hover:bg-accent/50 bg-transparent"
+                onClick={logout}
               >
                 <LogOut className="w-4 h-4 mr-3" />
                 Sign Out

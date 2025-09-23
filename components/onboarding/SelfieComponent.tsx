@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useRef } from 'react';
-import { Button } from '@/components/ui/button';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Camera, Upload, Loader2, Check } from 'lucide-react';
-import { useUploadSelfie } from '@/lib/api';
-import type { UserProfile } from '@/lib/api';
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Camera, Upload, Loader2, Check } from "lucide-react";
+import { useUploadSelfie } from "@/lib/api";
+import type { UserProfile } from "@/lib/api";
 
 interface SelfieComponentProps {
   user: UserProfile;
@@ -13,7 +13,11 @@ interface SelfieComponentProps {
   onSkip: () => void;
 }
 
-export function SelfieComponent({ user, onSelfieUploaded, onSkip }: SelfieComponentProps) {
+export function SelfieComponent({
+  user,
+  onSelfieUploaded,
+  onSkip,
+}: SelfieComponentProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -24,14 +28,14 @@ export function SelfieComponent({ user, onSelfieUploaded, onSkip }: SelfieCompon
     const file = event.target.files?.[0];
     if (file) {
       // Validate file type
-      if (!file.type.startsWith('image/')) {
-        alert('Please select an image file');
+      if (!file.type.startsWith("image/")) {
+        alert("Please select an image file");
         return;
       }
 
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('File size should be less than 5MB');
+        alert("File size should be less than 5MB");
         return;
       }
 
@@ -63,7 +67,7 @@ export function SelfieComponent({ user, onSelfieUploaded, onSkip }: SelfieCompon
 
       onSelfieUploaded(updatedUser);
     } catch (error) {
-      console.error('Selfie upload failed:', error);
+      console.error("Selfie upload failed:", error);
     }
   };
 
@@ -76,7 +80,7 @@ export function SelfieComponent({ user, onSelfieUploaded, onSkip }: SelfieCompon
   };
 
   // Clean up preview URL on unmount
-  React.useEffect(() => {
+  useEffect(() => {
     return () => {
       if (previewUrl) {
         URL.revokeObjectURL(previewUrl);
@@ -98,7 +102,7 @@ export function SelfieComponent({ user, onSelfieUploaded, onSkip }: SelfieCompon
         <div className="relative">
           <div
             className={`w-64 h-64 rounded-full border-2 border-dashed border-border flex items-center justify-center cursor-pointer transition-all hover:border-primary/50 ${
-              previewUrl ? 'border-solid border-primary' : ''
+              previewUrl ? "border-solid border-primary" : ""
             }`}
             onClick={handleCaptureClick}
           >
@@ -119,7 +123,9 @@ export function SelfieComponent({ user, onSelfieUploaded, onSkip }: SelfieCompon
                   <Camera className="w-8 h-8 text-muted-foreground" />
                 </div>
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-foreground">Take or upload a selfie</p>
+                  <p className="text-sm font-medium text-foreground">
+                    Take or upload a selfie
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     Tap to select from camera or gallery
                   </p>
@@ -150,7 +156,8 @@ export function SelfieComponent({ user, onSelfieUploaded, onSkip }: SelfieCompon
         {uploadSelfieMutation.error && (
           <Alert className="border-destructive/50 bg-destructive/10">
             <AlertDescription className="text-destructive">
-              {uploadSelfieMutation.error.message || 'Failed to upload selfie. Please try again.'}
+              {uploadSelfieMutation.error.message ||
+                "Failed to upload selfie. Please try again."}
             </AlertDescription>
           </Alert>
         )}
@@ -179,9 +186,9 @@ export function SelfieComponent({ user, onSelfieUploaded, onSkip }: SelfieCompon
               Uploading...
             </>
           ) : selectedFile ? (
-            'Upload Selfie'
+            "Upload Selfie"
           ) : (
-            'Select a Photo First'
+            "Select a Photo First"
           )}
         </Button>
 
@@ -197,7 +204,9 @@ export function SelfieComponent({ user, onSelfieUploaded, onSkip }: SelfieCompon
 
       {/* Tips */}
       <div className="bg-muted/30 rounded-lg p-4 space-y-2">
-        <p className="text-xs font-medium text-foreground">Tips for a great selfie:</p>
+        <p className="text-xs font-medium text-foreground">
+          Tips for a great selfie:
+        </p>
         <ul className="text-xs text-muted-foreground space-y-1">
           <li>• Use good lighting, preferably natural light</li>
           <li>• Keep the camera at eye level</li>

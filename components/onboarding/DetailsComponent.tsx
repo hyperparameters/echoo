@@ -9,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Instagram, Mail, Loader2, User } from 'lucide-react';
-import { useUpdateProfile } from '@/lib/api';
+import { useProfile } from '@/stores/authStore';
 import type { UserProfile, UserDetailsForm } from '@/lib/api';
 
 interface DetailsComponentProps {
@@ -26,7 +26,7 @@ export function DetailsComponent({ user, onDetailsCompleted }: DetailsComponentP
     interests: [], // This will be added to API later
   });
 
-  const updateProfileMutation = useUpdateProfile();
+  const { updateProfile, isLoading, error } = useProfile();
 
   // Available interests (will be moved to API/config later)
   const availableInterests = [
@@ -73,14 +73,13 @@ export function DetailsComponent({ user, onDetailsCompleted }: DetailsComponentP
         description: formData.description || null,
       };
 
-      const updatedUser = await updateProfileMutation.mutateAsync(updateData);
+      const updatedUser = await updateProfile(updateData);
 
       // Note: interests will need to be handled separately when added to API
-      // For now, we'll store them in localStorage
+      // For now, we'll store them in localStorage via Zustand
       if (formData.interests.length > 0) {
-        const userData = JSON.parse(localStorage.getItem('echooUser') || '{}');
-        userData.interests = formData.interests;
-        localStorage.setItem('echooUser', JSON.stringify(userData));
+        // This could be added to the store in the future
+        localStorage.setItem('echoo-user-interests', JSON.stringify(formData.interests));
       }
 
       onDetailsCompleted(updatedUser);
@@ -223,10 +222,10 @@ export function DetailsComponent({ user, onDetailsCompleted }: DetailsComponentP
         )}
 
         {/* Error Display */}
-        {updateProfileMutation.error && (
+        {error && (
           <Alert className="border-destructive/50 bg-destructive/10">
             <AlertDescription className="text-destructive">
-              {updateProfileMutation.error.message || 'Failed to update profile. Please try again.'}
+              {error || 'Failed to update profile. Please try again.'}
             </AlertDescription>
           </Alert>
         )}
@@ -234,10 +233,10 @@ export function DetailsComponent({ user, onDetailsCompleted }: DetailsComponentP
         {/* Submit Button */}
         <Button
           type="submit"
-          disabled={!isValid || updateProfileMutation.isPending}
+          disabled={!isValid || isLoading}
           className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
         >
-          {updateProfileMutation.isPending ? (
+          {isLoading ? (
             <>
               <Loader2 className="w-4 h-4 mr-2 animate-spin" />
               Updating Profile...

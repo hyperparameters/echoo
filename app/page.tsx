@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Ripple } from "@/components/magicui/ripple";
 import { Loader2 } from "lucide-react";
-import { useOnboarding } from "@/hooks/useOnboarding";
+import { useOnboarding } from "@/stores/authStore";
 import { OnboardingStep } from "@/lib/api";
 import {
   LoginComponent,
@@ -14,18 +15,24 @@ import {
 } from "@/components/onboarding";
 
 export default function OnboardingPage() {
+  const router = useRouter();
   const {
     isLoading,
     isLoggedIn,
     user,
     currentStep,
     hasCompletedOnboarding,
-    handleLoginSuccess,
-    handleSelfieCompleted,
-    handleSelfieSkipped,
-    handleDetailsCompleted,
-    handleWelcomeCompleted,
+    completeOnboardingStep,
+    skipCurrentStep,
+    updateProfile,
   } = useOnboarding();
+
+  // Redirect to home if onboarding is complete
+  useEffect(() => {
+    if (hasCompletedOnboarding && currentStep === OnboardingStep.COMPLETE) {
+      router.push('/home');
+    }
+  }, [hasCompletedOnboarding, currentStep, router]);
 
   const profilePhotos = [
     "/sunset-marina-bay.jpg",
@@ -50,6 +57,32 @@ export default function OnboardingPage() {
       </div>
     );
   }
+
+  // Simplified onboarding handlers
+  const handleLoginSuccess = (user: any) => {
+    completeOnboardingStep(OnboardingStep.LOGIN, user);
+  };
+
+  const handleSelfieCompleted = (updatedUser: any) => {
+    completeOnboardingStep(OnboardingStep.SELFIE, updatedUser);
+  };
+
+  const handleSelfieSkipped = () => {
+    skipCurrentStep();
+  };
+
+  const handleDetailsCompleted = async (profileData: any) => {
+    try {
+      const updatedUser = await updateProfile(profileData);
+      completeOnboardingStep(OnboardingStep.DETAILS, updatedUser);
+    } catch (error) {
+      console.error('Failed to update profile:', error);
+    }
+  };
+
+  const handleWelcomeCompleted = () => {
+    completeOnboardingStep(OnboardingStep.WELCOME);
+  };
 
   // Render appropriate component based on onboarding state
   const renderOnboardingStep = () => {

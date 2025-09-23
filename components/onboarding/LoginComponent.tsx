@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Mail, Lock, User, Eye, EyeOff } from "lucide-react";
-import { useLogin, useRegister } from "@/lib/api";
+import { useAuth } from "@/stores/authStore";
 import type { LoginCredentials, UserCreate, UserProfile } from "@/lib/api";
 
 interface LoginComponentProps {
@@ -30,16 +30,17 @@ export function LoginComponent({ onLoginSuccess }: LoginComponentProps) {
   });
   const [currentTab, setCurrentTab] = useState("login");
 
-  const loginMutation = useLogin();
-  const registerMutation = useRegister();
+  const { login, register, isLoading, error, clearError } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!loginForm.email || !loginForm.password) return;
 
+    clearError();
     try {
-      const response = await loginMutation.mutateAsync(loginForm);
-      onLoginSuccess(response.user);
+      await login(loginForm);
+      // onLoginSuccess will be called by the store's login method
+      // The parent component will handle navigation based on store state
     } catch (error) {
       console.error("Login failed:", error);
     }
@@ -55,19 +56,19 @@ export function LoginComponent({ onLoginSuccess }: LoginComponentProps) {
       return;
     }
 
+    clearError();
     try {
-      await registerMutation.mutateAsync({
+      await register({
         username: registerForm.username,
         password: registerForm.password,
       });
 
       // After successful registration, auto-login
-      const loginResponse = await loginMutation.mutateAsync({
+      await login({
         email: registerForm.username, // Assuming username is email for login
         password: registerForm.password,
       });
 
-      onLoginSuccess(loginResponse.user);
     } catch (error) {
       console.error("Registration failed:", error);
     }
@@ -154,21 +155,20 @@ export function LoginComponent({ onLoginSuccess }: LoginComponentProps) {
                   </div>
                 </div>
 
-                {loginMutation.error && (
+                {error && (
                   <Alert className="border-destructive/50 bg-destructive/10">
                     <AlertDescription className="text-destructive">
-                      {loginMutation.error.message ||
-                        "Login failed. Please check your credentials."}
+                      {error || "Login failed. Please check your credentials."}
                     </AlertDescription>
                   </Alert>
                 )}
 
                 <Button
                   type="submit"
-                  disabled={!isLoginValid || loginMutation.isPending}
+                  disabled={!isLoginValid || isLoading}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
-                  {loginMutation.isPending ? (
+                  {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Signing in...
@@ -273,21 +273,20 @@ export function LoginComponent({ onLoginSuccess }: LoginComponentProps) {
                     </Alert>
                   )}
 
-                {registerMutation.error && (
+                {error && (
                   <Alert className="border-destructive/50 bg-destructive/10">
                     <AlertDescription className="text-destructive">
-                      {registerMutation.error.message ||
-                        "Registration failed. Please try again."}
+                      {error || "Registration failed. Please try again."}
                     </AlertDescription>
                   </Alert>
                 )}
 
                 <Button
                   type="submit"
-                  disabled={!isRegisterValid || registerMutation.isPending}
+                  disabled={!isRegisterValid || isLoading}
                   className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 >
-                  {registerMutation.isPending ? (
+                  {isLoading ? (
                     <>
                       <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                       Creating account...
