@@ -48,6 +48,8 @@ export function FileUploadDialog({
     []
   );
   const [showProgress, setShowProgress] = useState(false);
+  const [totalSize, setTotalSize] = useState(0);
+  const [uploadedSize, setUploadedSize] = useState(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const resetState = useCallback(() => {
@@ -56,6 +58,8 @@ export function FileUploadDialog({
     setIsUploading(false);
     setUploadResults([]);
     setShowProgress(false);
+    setTotalSize(0);
+    setUploadedSize(0);
   }, []);
 
   const handleFileSelect = useCallback(
@@ -82,7 +86,13 @@ export function FileUploadDialog({
         validFiles.splice(maxFiles - selectedFiles.length);
       }
 
-      setSelectedFiles((prev) => [...prev, ...validFiles]);
+      setSelectedFiles((prev) => {
+        const newFiles = [...prev, ...validFiles];
+        // Calculate total size
+        const total = newFiles.reduce((sum, file) => sum + file.size, 0);
+        setTotalSize(total);
+        return newFiles;
+      });
     },
     [selectedFiles, acceptedFileTypes, maxFiles, maxFileSize]
   );
@@ -100,7 +110,13 @@ export function FileUploadDialog({
   );
 
   const removeFile = useCallback((index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index));
+    setSelectedFiles((prev) => {
+      const newFiles = prev.filter((_, i) => i !== index);
+      // Recalculate total size
+      const total = newFiles.reduce((sum, file) => sum + file.size, 0);
+      setTotalSize(total);
+      return newFiles;
+    });
   }, []);
 
   const getUserId = useCallback(() => {
@@ -131,16 +147,24 @@ export function FileUploadDialog({
 
     const userId = getUserId();
     const results: FilecoinUploadResponse[] = [];
+    setUploadedSize(0); // Reset uploaded size
 
     try {
-      // Upload files one by one
-      for (let i = 0; i < selectedFiles.length; i++) {
-        const file = selectedFiles[i];
+      // Sliding window approach: maintain exactly 3 concurrent uploads
+      const maxConcurrency = 5;
+      let nextFileIndex = 0;
+      const activeUploads = new Set<Promise<void>>();
+
+      // Helper function to start a single upload
+      const startUpload = async (fileIndex: number): Promise<void> => {
+        const file = selectedFiles[fileIndex];
 
         // Update status to uploading
         setUploadProgress((prev) =>
           prev.map((item, index) =>
-            index === i ? { ...item, status: "uploading" as const } : item
+            index === fileIndex
+              ? { ...item, status: "uploading" as const }
+              : item
           )
         );
 
@@ -151,7 +175,7 @@ export function FileUploadDialog({
             (progress: UploadProgress) => {
               setUploadProgress((prev) =>
                 prev.map((item, index) =>
-                  index === i
+                  index === fileIndex
                     ? { ...item, progress: progress.percentage }
                     : item
                 )
@@ -162,7 +186,7 @@ export function FileUploadDialog({
           // Mark as completed
           setUploadProgress((prev) =>
             prev.map((item, index) =>
-              index === i
+              index === fileIndex
                 ? {
                     ...item,
                     status: "completed" as const,
@@ -173,21 +197,41 @@ export function FileUploadDialog({
             )
           );
 
+          // Update uploaded size
+          setUploadedSize((prev) => prev + file.size);
           results.push(result);
-
-          // Upload completed successfully
         } catch (error) {
           // Mark as error
           const errorMessage =
             error instanceof Error ? error.message : "Upload failed";
           setUploadProgress((prev) =>
             prev.map((item, index) =>
-              index === i
+              index === fileIndex
                 ? { ...item, status: "error" as const, errorMessage }
                 : item
             )
           );
           console.error(`Failed to upload ${file.name}:`, error);
+        }
+      };
+
+      // Process all files with sliding window
+      while (nextFileIndex < selectedFiles.length || activeUploads.size > 0) {
+        // Start new uploads if we have capacity and more files
+        while (
+          activeUploads.size < maxConcurrency &&
+          nextFileIndex < selectedFiles.length
+        ) {
+          const uploadPromise = startUpload(nextFileIndex).finally(() => {
+            activeUploads.delete(uploadPromise);
+          });
+          activeUploads.add(uploadPromise);
+          nextFileIndex++;
+        }
+
+        // Wait for at least one upload to complete
+        if (activeUploads.size > 0) {
+          await Promise.race(activeUploads);
         }
       }
 
@@ -420,6 +464,8 @@ export function FileUploadDialog({
       {showProgress && (
         <UploadProgressBar
           files={uploadProgress}
+          totalSize={totalSize}
+          uploadedSize={uploadedSize}
           onClose={() => {
             setShowProgress(false);
             resetState();

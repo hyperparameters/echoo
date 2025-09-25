@@ -1,49 +1,62 @@
-"use client"
+"use client";
 
-import React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { X, Upload, Check, AlertCircle } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Progress } from '@/components/ui/progress'
+import React from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Upload, Check, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 
 export interface FileUploadProgress {
-  file: File
-  progress: number
-  status: 'pending' | 'uploading' | 'completed' | 'error'
-  errorMessage?: string
-  response?: any
+  file: File;
+  progress: number;
+  status: "pending" | "uploading" | "completed" | "error";
+  errorMessage?: string;
+  response?: any;
 }
 
 interface UploadProgressBarProps {
-  files: FileUploadProgress[]
-  onCancel?: () => void
-  onRetry?: (fileIndex: number) => void
-  onClose?: () => void
-  className?: string
+  files: FileUploadProgress[];
+  totalSize?: number;
+  uploadedSize?: number;
+  onCancel?: () => void;
+  onRetry?: (fileIndex: number) => void;
+  onClose?: () => void;
+  className?: string;
 }
 
 export function UploadProgressBar({
   files,
+  totalSize = 0,
+  uploadedSize = 0,
   onCancel,
   onRetry,
   onClose,
-  className = ""
+  className = "",
 }: UploadProgressBarProps) {
-  const totalFiles = files.length
-  const completedFiles = files.filter(f => f.status === 'completed').length
-  const failedFiles = files.filter(f => f.status === 'error').length
-  const overallProgress = totalFiles > 0 ? (completedFiles / totalFiles) * 100 : 0
-  const allCompleted = completedFiles === totalFiles && failedFiles === 0
-  const hasErrors = failedFiles > 0
+  const totalFiles = files.length;
+  const completedFiles = files.filter((f) => f.status === "completed").length;
+  const failedFiles = files.filter((f) => f.status === "error").length;
+  const overallProgress =
+    totalFiles > 0 ? (completedFiles / totalFiles) * 100 : 0;
+  const allCompleted = completedFiles === totalFiles && failedFiles === 0;
+  const hasErrors = failedFiles > 0;
 
-  const getStatusIcon = (status: FileUploadProgress['status']) => {
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return "0 Bytes";
+    const k = 1024;
+    const sizes = ["Bytes", "KB", "MB", "GB"];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
+  };
+
+  const getStatusIcon = (status: FileUploadProgress["status"]) => {
     switch (status) {
-      case 'completed':
-        return <Check className="w-4 h-4 text-green-500" />
-      case 'error':
-        return <AlertCircle className="w-4 h-4 text-red-500" />
-      case 'uploading':
+      case "completed":
+        return <Check className="w-4 h-4 text-green-500" />;
+      case "error":
+        return <AlertCircle className="w-4 h-4 text-red-500" />;
+      case "uploading":
         return (
           <motion.div
             animate={{ rotate: 360 }}
@@ -51,17 +64,20 @@ export function UploadProgressBar({
           >
             <Upload className="w-4 h-4 text-primary" />
           </motion.div>
-        )
+        );
       default:
-        return <Upload className="w-4 h-4 text-muted-foreground" />
+        return <Upload className="w-4 h-4 text-muted-foreground" />;
     }
-  }
+  };
 
-  const getProgressColor = (status: FileUploadProgress['status'], progress: number) => {
-    if (status === 'error') return 'bg-red-500'
-    if (status === 'completed') return 'bg-green-500'
-    return 'bg-gradient-to-r from-primary to-secondary'
-  }
+  const getProgressColor = (
+    status: FileUploadProgress["status"],
+    progress: number
+  ) => {
+    if (status === "error") return "bg-red-500";
+    if (status === "completed") return "bg-green-500";
+    return "bg-gradient-to-r from-primary to-secondary";
+  };
 
   return (
     <AnimatePresence>
@@ -69,7 +85,12 @@ export function UploadProgressBar({
         initial={{ opacity: 0, y: 50, scale: 0.95 }}
         animate={{ opacity: 1, y: 0, scale: 1 }}
         exit={{ opacity: 0, y: 50, scale: 0.95 }}
-        transition={{ duration: 0.3, type: "spring", stiffness: 300, damping: 30 }}
+        transition={{
+          duration: 0.3,
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+        }}
         className={`fixed bottom-4 left-4 right-4 z-50 ${className}`}
       >
         <Card className="glass-card border-border/50 shadow-2xl backdrop-blur-md">
@@ -86,10 +107,14 @@ export function UploadProgressBar({
                 </div>
                 <div>
                   <h3 className="font-semibold text-foreground">
-                    {allCompleted ? 'Upload Complete!' : 'Uploading Files'}
+                    {allCompleted ? "Upload Complete!" : "Uploading Files"}
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     {completedFiles} of {totalFiles} files uploaded
+                    {totalSize > 0 &&
+                      ` • ${formatFileSize(uploadedSize)} of ${formatFileSize(
+                        totalSize
+                      )}`}
                     {hasErrors && ` • ${failedFiles} failed`}
                   </p>
                 </div>
@@ -122,7 +147,9 @@ export function UploadProgressBar({
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Overall Progress</span>
-                <span className="font-medium text-foreground">{Math.round(overallProgress)}%</span>
+                <span className="font-medium text-foreground">
+                  {Math.round(overallProgress)}%
+                </span>
               </div>
               <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
                 <motion.div
@@ -158,9 +185,12 @@ export function UploadProgressBar({
                       </span>
                     </div>
 
-                    {fileProgress.status === 'error' && fileProgress.errorMessage ? (
+                    {fileProgress.status === "error" &&
+                    fileProgress.errorMessage ? (
                       <div className="flex items-center justify-between">
-                        <p className="text-xs text-red-500">{fileProgress.errorMessage}</p>
+                        <p className="text-xs text-red-500">
+                          {fileProgress.errorMessage}
+                        </p>
                         {onRetry && (
                           <Button
                             size="sm"
@@ -176,8 +206,11 @@ export function UploadProgressBar({
                       <div className="space-y-1">
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground">
-                            {fileProgress.status === 'completed' ? 'Completed' :
-                             fileProgress.status === 'pending' ? 'Pending' : 'Uploading'}
+                            {fileProgress.status === "completed"
+                              ? "Completed"
+                              : fileProgress.status === "pending"
+                              ? "Pending"
+                              : "Uploading"}
                           </span>
                           <span className="font-medium">
                             {fileProgress.progress}%
@@ -185,7 +218,10 @@ export function UploadProgressBar({
                         </div>
                         <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
                           <motion.div
-                            className={`h-full rounded-full ${getProgressColor(fileProgress.status, fileProgress.progress)}`}
+                            className={`h-full rounded-full ${getProgressColor(
+                              fileProgress.status,
+                              fileProgress.progress
+                            )}`}
                             initial={{ width: 0 }}
                             animate={{ width: `${fileProgress.progress}%` }}
                             transition={{ duration: 0.3, ease: "easeOut" }}
@@ -201,5 +237,5 @@ export function UploadProgressBar({
         </Card>
       </motion.div>
     </AnimatePresence>
-  )
+  );
 }
