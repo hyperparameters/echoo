@@ -14,6 +14,7 @@ interface N8nChatProps {
   webhookUrl: string;
   userName?: string;
   className?: string;
+  user_id: number | undefined;
 }
 
 interface N8nMessage {
@@ -26,7 +27,12 @@ interface N8nMessage {
   customData?: any;
 }
 
-export function N8nChat({ webhookUrl, userName, className }: N8nChatProps) {
+export function N8nChat({
+  webhookUrl,
+  userName,
+  className,
+  user_id,
+}: N8nChatProps) {
   const [messages, setMessages] = useState<N8nMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [sessionId, setSessionId] = useState<string>("");
@@ -212,7 +218,7 @@ export function N8nChat({ webhookUrl, userName, className }: N8nChatProps) {
         chatInput: content,
         sessionId: sessionId,
         metadata: {
-          user_id: 2,
+          user_id: user_id,
           files: files
             ? files.map((f) => ({ name: f.name, size: f.size, type: f.type }))
             : [],

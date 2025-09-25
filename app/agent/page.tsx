@@ -13,7 +13,7 @@ export default function AgentPage() {
 
   return (
     <AppLayout>
-      <N8nChat webhookUrl={webhookUrl} userName={userName} />
+      <N8nChat webhookUrl={webhookUrl} userName={userName} user_id={user?.id} />
     </AppLayout>
   );
 }
