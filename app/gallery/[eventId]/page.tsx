@@ -41,7 +41,7 @@ export default function EventGalleryPage() {
       width: image.width,
       height: image.height,
       alt: image.name,
-      key: image.id.toString(),
+      key: image?.id?.toString() || image.name,
     })) || [];
 
   const handleBack = () => {
