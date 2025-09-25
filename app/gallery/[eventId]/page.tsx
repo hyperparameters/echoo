@@ -23,7 +23,7 @@ export default function EventGalleryPage() {
   const router = useRouter();
   const eventId = parseInt(params.eventId as string);
 
-  const { data: event, isLoading: isLoadingEvent } = useEvent(eventId);
+  // const { data: event, isLoading: isLoadingEvent } = useEvent(eventId);
   const {
     data: eventImages,
     isLoading: isLoadingImages,
@@ -51,8 +51,8 @@ export default function EventGalleryPage() {
   const handleShare = () => {
     if (navigator.share) {
       navigator.share({
-        title: event?.name || "Event Gallery",
-        text: `Check out this event gallery: ${event?.name}`,
+        title: "Event Gallery",
+        text: `Check out this event gallery`,
         url: window.location.href,
       });
     } else {
@@ -61,7 +61,7 @@ export default function EventGalleryPage() {
     }
   };
 
-  if (isLoadingEvent || isLoadingImages) {
+  if (isLoadingImages) {
     return (
       <AppLayout>
         <div className="p-6 space-y-4">
@@ -137,14 +137,14 @@ export default function EventGalleryPage() {
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
-            <div>
+            {/* <div>
               <h1 className="text-2xl font-bold text-foreground">
                 {event?.name || "Event Gallery"}
               </h1>
               <p className="text-muted-foreground">
                 {event?.description || "Event photos and memories"}
               </p>
-            </div>
+            </div> */}
           </div>
           <div className="flex space-x-2">
             <Button
@@ -159,7 +159,7 @@ export default function EventGalleryPage() {
         </div>
 
         {/* Event Info */}
-        {event && (
+        {/* {event && (
           <Card>
             <CardContent className="p-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -190,7 +190,7 @@ export default function EventGalleryPage() {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
 
         {/* Gallery Stats */}
         <div className="flex items-center justify-between">
