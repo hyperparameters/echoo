@@ -21,6 +21,7 @@ interface JoinEventDialogProps {
   onClose: () => void;
   eventId: number;
   eventName: string;
+  onJoinStart?: () => void;
 }
 
 export function JoinEventDialog({
@@ -28,12 +29,14 @@ export function JoinEventDialog({
   onClose,
   eventId,
   eventName,
+  onJoinStart,
 }: JoinEventDialogProps) {
   const [isConfirming, setIsConfirming] = useState(false);
   const registerEventMutation = useRegisterEvent();
 
   const handleJoinEvent = async () => {
     setIsConfirming(true);
+    onJoinStart?.(); // Notify parent component that join process has started
     try {
       await registerEventMutation.mutateAsync(eventId);
       toast.success("Successfully joined the event!", {

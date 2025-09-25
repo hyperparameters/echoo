@@ -97,6 +97,7 @@ export interface EventResponse {
   fotoowl_event_key?: string | null;
   location?: string | null;
   category?: string | null;
+  registered: boolean;
   created_at: string;
   updated_at: string;
 }

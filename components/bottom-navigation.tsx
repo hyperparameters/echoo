@@ -54,6 +54,11 @@ export function BottomNavigation({ currentTab }: BottomNavigationProps) {
   }, [pathname]);
 
   const handleItemClick = (index: number) => {
+    // Don't set loading state if clicking on the already active tab
+    if (index === activeIndex) {
+      return;
+    }
+
     // Immediately set loading state for page-level loader
     setLoadingTab(index);
 

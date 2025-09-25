@@ -2,7 +2,14 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, MapPin, Users, Plus, ExternalLink } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Plus,
+  ExternalLink,
+  Loader2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +28,7 @@ export default function EventsPage() {
     error: registeredError,
   } = useRegisteredEvents();
   const [joinDialogOpen, setJoinDialogOpen] = useState(false);
+  const [isJoiningEvent, setIsJoiningEvent] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<{
     id: number;
     name: string;
@@ -46,6 +54,12 @@ export default function EventsPage() {
   const handleDialogClose = () => {
     setJoinDialogOpen(false);
     setSelectedEvent(null);
+    setIsJoiningEvent(false);
+  };
+
+  // Handle join event start
+  const handleJoinEventStart = () => {
+    setIsJoiningEvent(true);
   };
 
   // Handle view gallery navigation
@@ -157,7 +171,7 @@ export default function EventsPage() {
                       <img
                         src={event.cover_image_url}
                         alt={event.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                         onError={(e) => {
                           // Hide image if it fails to load
                           e.currentTarget.style.display = "none";
@@ -166,20 +180,31 @@ export default function EventsPage() {
                     </div>
                   )}
                   <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
+                    <div className="space-y-3">
+                      {/* Tags row above title */}
+                      <div className="flex gap-2 flex-wrap">
+                        {event.registered && (
+                          <Badge
+                            variant="default"
+                            className="bg-green-500 hover:bg-green-600"
+                          >
+                            Registered
+                          </Badge>
+                        )}
+                        {event.category && (
+                          <Badge variant="secondary">{event.category}</Badge>
+                        )}
+                      </div>
+
+                      {/* Title and description */}
+                      <div>
                         <CardTitle className="text-lg text-foreground">
                           {event.name}
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-4">
                           {event.description}
                         </p>
                       </div>
-                      {event.category && (
-                        <Badge variant="secondary" className="ml-2">
-                          {event.category}
-                        </Badge>
-                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0">
@@ -198,14 +223,34 @@ export default function EventsPage() {
                       )}
                     </div>
                     <div className="flex gap-2 mt-4">
-                      <Button
-                        size="sm"
-                        variant="gradient"
-                        className="flex-1"
-                        onClick={() => handleJoinEvent(event.id, event.name)}
-                      >
-                        Join Event
-                      </Button>
+                      {event.registered ? (
+                        <Button
+                          size="sm"
+                          variant="gradient"
+                          className="flex-1"
+                          onClick={() => handleViewGallery(event.id)}
+                        >
+                          <ExternalLink className="w-4 h-4 mr-2" />
+                          View Gallery
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="gradient"
+                          className="flex-1"
+                          onClick={() => handleJoinEvent(event.id, event.name)}
+                          disabled={isJoiningEvent}
+                        >
+                          {isJoiningEvent ? (
+                            <>
+                              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                              Joining...
+                            </>
+                          ) : (
+                            "Join Event"
+                          )}
+                        </Button>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
@@ -277,7 +322,7 @@ export default function EventsPage() {
                       <img
                         src={registeredEvent.event_cover_image_url}
                         alt={registeredEvent.event_name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-contain"
                         onError={(e) => {
                           // Hide image if it fails to load
                           e.currentTarget.style.display = "none";
@@ -286,20 +331,25 @@ export default function EventsPage() {
                     </div>
                   )}
                   <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
+                    <div className="space-y-3">
+                      {/* Tags row above title */}
+                      <div className="flex gap-2 flex-wrap">
+                        {registeredEvent.event_category && (
+                          <Badge variant="secondary">
+                            {registeredEvent.event_category}
+                          </Badge>
+                        )}
+                      </div>
+
+                      {/* Title and description */}
+                      <div>
                         <CardTitle className="text-lg text-foreground">
                           {registeredEvent.event_name}
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-sm text-muted-foreground mt-1 line-clamp-4">
                           {registeredEvent.event_description}
                         </p>
                       </div>
-                      {registeredEvent.event_category && (
-                        <Badge variant="secondary" className="ml-2">
-                          {registeredEvent.event_category}
-                        </Badge>
-                      )}
                     </div>
                   </CardHeader>
                   <CardContent className="pt-0">
@@ -354,6 +404,7 @@ export default function EventsPage() {
           onClose={handleDialogClose}
           eventId={selectedEvent.id}
           eventName={selectedEvent.name}
+          onJoinStart={handleJoinEventStart}
         />
       )}
     </AppLayout>

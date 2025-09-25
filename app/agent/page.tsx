@@ -1,23 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/app-layout";
 import { N8nChat } from "@/components/n8n-chat";
+import { useAuth } from "@/stores/authStore";
 
 export default function AgentPage() {
-  const [userName, setUserName] = useState("");
+  const { user } = useAuth();
+  const userName = user?.username || "User";
 
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const userData = localStorage.getItem("echooUser");
-      if (userData) {
-        const user = JSON.parse(userData);
-        setUserName(user.fullName);
-      }
-    }
-  }, []);
-
-  // TODO: Replace with your actual n8n webhook URL
   const webhookUrl =
     process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "YOUR_N8N_WEBHOOK_URL";
 

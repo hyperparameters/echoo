@@ -2,7 +2,7 @@
 
 import { MasonryPhotoAlbum } from "react-photo-album";
 import "react-photo-album/masonry.css";
-import { Heart, MessageCircle, Download } from "lucide-react";
+import { Heart, MessageCircle, Download, Share } from "lucide-react";
 
 /**
  * Photo interface for react-photo-album
@@ -74,20 +74,20 @@ export function PhotoGallery({
     try {
       // Try the modern download approach first
       const response = await fetch(imageUrl, {
-        mode: 'cors',
-        credentials: 'omit'
+        mode: "cors",
+        credentials: "omit",
       });
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = imageName || `image-${Date.now()}.jpg`;
-      link.style.display = 'none';
+      link.style.display = "none";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -95,18 +95,51 @@ export function PhotoGallery({
     } catch (error) {
       // Fallback 1: Try direct link download
       try {
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = imageUrl;
         link.download = imageName || `image-${Date.now()}.jpg`;
-        link.target = '_blank';
-        link.style.display = 'none';
+        link.target = "_blank";
+        link.style.display = "none";
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
       } catch (fallbackError) {
         // Final fallback: open in new tab
-        window.open(imageUrl, '_blank');
+        window.open(imageUrl, "_blank");
       }
+    }
+  };
+
+  const handleShare = async (imageUrl: string, imageName?: string) => {
+    const shareData = {
+      title: imageName || "Shared Image",
+      text: `Check out this image: ${imageName || "Amazing photo"}`,
+      url: imageUrl,
+    };
+
+    // Check if native share is available (mobile devices)
+    if (
+      navigator.share &&
+      navigator.canShare &&
+      navigator.canShare(shareData)
+    ) {
+      try {
+        await navigator.share(shareData);
+        return;
+      } catch (error) {
+        // User cancelled or error occurred, fall back to clipboard
+        console.log("Native share cancelled or failed:", error);
+      }
+    }
+
+    // Fallback: Copy to clipboard
+    try {
+      await navigator.clipboard.writeText(imageUrl);
+      // You could add a toast notification here
+      console.log("Image URL copied to clipboard");
+    } catch (error) {
+      // Final fallback: open in new tab
+      window.open(imageUrl, "_blank");
     }
   };
   if (isLoading) {
@@ -191,23 +224,45 @@ export function PhotoGallery({
                     }}
                   />
 
-                  {/* Download button - always visible on mobile, hover on desktop */}
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleDownload(photo.src, currentImageData?.name || photo.alt);
-                    }}
-                    className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-black/70 rounded-full text-white transition-colors duration-200 md:opacity-0 md:group-hover:opacity-100 md:top-3 md:right-3 md:p-2 z-10"
-                    title="Download image"
-                    type="button"
-                  >
-                    <Download className="w-3 h-3 md:w-4 md:h-4" />
-                  </button>
+                  {/* Action buttons container */}
+                  <div className="absolute bottom-2 right-2 flex flex-row gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200 z-10">
+                    {/* Download button */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDownload(
+                          photo.src,
+                          currentImageData?.name || photo.alt
+                        );
+                      }}
+                      className="p-2 bg-black/70 hover:bg-black/90 rounded-full text-white transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm border border-white/20 hover:scale-105 active:scale-95"
+                      title="Download image"
+                      type="button"
+                    >
+                      <Download className="w-4 h-4" />
+                    </button>
+
+                    {/* Share button */}
+                    <button
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleShare(
+                          photo.src,
+                          currentImageData?.name || photo.alt
+                        );
+                      }}
+                      className="p-2 bg-black/70 hover:bg-black/90 rounded-full text-white transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm border border-white/20 hover:scale-105 active:scale-95"
+                      title="Share image"
+                      type="button"
+                    >
+                      <Share className="w-4 h-4" />
+                    </button>
+                  </div>
 
                   {/* Overlay with image info */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-
                     <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                       <p className="text-sm font-medium line-clamp-2 mb-2">
                         {currentImageData?.name ||

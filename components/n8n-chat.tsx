@@ -3,10 +3,12 @@
 import { useEffect, useRef, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { PromptInputBox } from "@/components/prompt-input-box";
 import { PlatformTrendsComponent } from "@/components/chat/PlatformTrendsComponent";
 import { PostSuggestionsComponent } from "@/components/chat/PostSuggestionsComponent";
+import { Plus, MessageSquare } from "lucide-react";
 
 interface N8nChatProps {
   webhookUrl: string;
@@ -30,6 +32,10 @@ export function N8nChat({ webhookUrl, userName, className }: N8nChatProps) {
   const [sessionId, setSessionId] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // localStorage keys
+  const SESSION_KEY = "echoo_chat_session_id";
+  const MESSAGES_KEY = "echoo_chat_messages";
 
   // Helper function to detect and parse custom JSON responses
   const parseCustomResponse = (response: any) => {
@@ -102,12 +108,56 @@ export function N8nChat({ webhookUrl, userName, className }: N8nChatProps) {
     }
   };
 
-  // Initialize session ID
+  // Helper functions for localStorage
+  const saveToLocalStorage = (key: string, data: any) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+      console.error("Error saving to localStorage:", error);
+    }
+  };
+
+  const loadFromLocalStorage = (key: string) => {
+    try {
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error("Error loading from localStorage:", error);
+      return null;
+    }
+  };
+
+  const clearLocalStorage = () => {
+    try {
+      localStorage.removeItem(SESSION_KEY);
+      localStorage.removeItem(MESSAGES_KEY);
+    } catch (error) {
+      console.error("Error clearing localStorage:", error);
+    }
+  };
+
+  // Initialize session ID and load messages from localStorage
   useEffect(() => {
-    const newSessionId = `session_${Date.now()}_${Math.random()
-      .toString(36)
-      .substr(2, 9)}`;
-    setSessionId(newSessionId);
+    const savedSessionId = loadFromLocalStorage(SESSION_KEY);
+    const savedMessages = loadFromLocalStorage(MESSAGES_KEY);
+
+    if (savedSessionId && savedMessages) {
+      // Restore existing session
+      setSessionId(savedSessionId);
+      setMessages(
+        savedMessages.map((msg: any) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        }))
+      );
+    } else {
+      // Create new session
+      const newSessionId = `session_${Date.now()}_${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+      setSessionId(newSessionId);
+      saveToLocalStorage(SESSION_KEY, newSessionId);
+    }
   }, []);
 
   // Auto-scroll to bottom when new messages arrive
@@ -115,19 +165,25 @@ export function N8nChat({ webhookUrl, userName, className }: N8nChatProps) {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Initialize with welcome message
+  // Save messages to localStorage whenever messages change
+  useEffect(() => {
+    if (messages.length > 0) {
+      saveToLocalStorage(MESSAGES_KEY, messages);
+    }
+  }, [messages]);
+
+  // Initialize with welcome message only if no messages exist
   useEffect(() => {
     if (userName && messages.length === 0) {
       const welcomeMessage: N8nMessage = {
         id: "welcome",
         type: "ai",
-        content: `Hi ${userName}! I'm your AI growth strategist. I can help you with content ideas, posting schedules, and growth strategies. What would you like to work on today?`,
+        content: `Hi ${userName}! I'm Echoo, your AI social media assistant. I specialize in transforming your photos into engaging social media posts that drive growth and engagement. Whether you need captions, hashtags, or content strategies, I'm here to help you turn your memories into viral moments. What photos would you like to work with today?`,
         timestamp: new Date(),
         suggestions: [
-          "Analyze my recent posts",
-          "Suggest posting times",
-          "Content ideas for this week",
-          "Growth strategy tips",
+          "Create posts from my recent photos",
+          "Generate captions for my gallery",
+          "Suggest hashtags for my content",
         ],
       };
       setMessages([welcomeMessage]);
@@ -220,6 +276,23 @@ export function N8nChat({ webhookUrl, userName, className }: N8nChatProps) {
     sendMessageToN8n(suggestion);
   };
 
+  const startNewChat = () => {
+    // Clear localStorage
+    clearLocalStorage();
+
+    // Create new session ID
+    const newSessionId = `session_${Date.now()}_${Math.random()
+      .toString(36)
+      .substr(2, 9)}`;
+    setSessionId(newSessionId);
+    saveToLocalStorage(SESSION_KEY, newSessionId);
+
+    // Clear messages
+    setMessages([]);
+
+    // The welcome message will be added automatically by the useEffect
+  };
+
   return (
     <div
       ref={chatContainerRef}
@@ -227,22 +300,33 @@ export function N8nChat({ webhookUrl, userName, className }: N8nChatProps) {
     >
       {/* Header */}
       <div className="p-6 border-b border-border/50">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-full bg-gradient-to-r from-brand-primary/20 to-brand-accent/20 flex items-center justify-center">
-            <Logo variant="icon" width={56} height={56} />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground">
-              Echoo AI Assistant
-            </h1>
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-brand-accent rounded-full"></div>
-              <span className="text-sm text-muted-foreground">Online</span>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-brand-primary/20 to-brand-accent/20 flex items-center justify-center">
+              <Logo variant="icon" width={56} height={56} />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">
+                Echoo AI Assistant
+              </h1>
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-brand-accent rounded-full"></div>
+                <span className="text-sm text-muted-foreground">Online</span>
+              </div>
             </div>
           </div>
+          <Button
+            onClick={startNewChat}
+            variant="outline"
+            size="sm"
+            className="flex items-center space-x-2 border-border hover:border-brand-primary hover:bg-brand-primary/10"
+          >
+            <Plus className="w-4 h-4" />
+            <span>New Chat</span>
+          </Button>
         </div>
         <p className="text-sm text-muted-foreground mt-2">
-          Your personal growth strategist
+          Transform your photos into viral social media posts
         </p>
       </div>
 

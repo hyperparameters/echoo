@@ -13,6 +13,8 @@ import {
   Sparkles,
   Heart,
   MessageCircle,
+  Camera,
+  Calendar,
 } from "lucide-react";
 import { AppLayout } from "@/components/app-layout";
 import { PhotoGallery, Photo } from "@/components/photo-gallery";
@@ -24,6 +26,7 @@ import { ImageListResponse } from "@/lib/api/types";
 interface ContentPost {
   id: number;
   image: string;
+  name: string;
   caption: string;
   likes: number;
   comments: number;
@@ -77,6 +80,7 @@ export default function HomePage() {
   const apiContentPosts: ContentPost[] = apiImages.map((image) => ({
     id: image.id,
     image: image.image_url,
+    name: image.name,
     caption: image.description || `Image ${image.id}`,
     likes: Math.floor(Math.random() * 2000) + 100, // Random likes for demo
     comments: Math.floor(Math.random() * 50) + 5, // Random comments for demo
@@ -111,12 +115,13 @@ export default function HomePage() {
       height: height,
       alt: post.caption,
       key: post.id.toString(),
+      name: post.name,
     };
   });
 
   const quickActions = [
     {
-      icon: Plus,
+      icon: Camera,
       label: "Add Content",
       category: "Content Creation",
       gradient: "from-blue-500 via-purple-500 to-pink-500",
@@ -124,28 +129,12 @@ export default function HomePage() {
       action: () => setIsUploadDialogOpen(true),
     },
     {
-      icon: TrendingUp,
-      label: "View Analytics",
-      category: "Analytics",
-      gradient: "from-yellow-400 via-orange-400 to-red-500",
-      bgColor: "bg-gradient-to-br from-yellow-400/20 to-orange-500/20",
-      action: () => console.log("Analytics clicked"),
-    },
-    {
-      icon: MapPin,
+      icon: Calendar,
       label: "Find Events",
       category: "Events",
       gradient: "from-teal-400 via-cyan-400 to-blue-500",
       bgColor: "bg-gradient-to-br from-teal-400/20 to-cyan-500/20",
       action: () => router.push("/events"),
-    },
-    {
-      icon: Sparkles,
-      label: "AI Insights",
-      category: "AI",
-      gradient: "from-pink-400 via-purple-400 to-indigo-500",
-      bgColor: "bg-gradient-to-br from-pink-400/20 to-purple-500/20",
-      action: () => router.push("/agent"),
     },
   ];
 
@@ -180,17 +169,17 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Quick Actions - Gradient Card Style */}
+        {/* Quick Actions - Simplified Layout */}
         <div className="space-y-4">
           <h2 className="text-lg font-semibold text-foreground">
-            Let's explore new fields
+            Quick Actions
           </h2>
           <div className="grid grid-cols-2 gap-4">
             {quickActions.map((action, index) => (
               <div
                 key={index}
                 onClick={action.action}
-                className={`relative overflow-hidden rounded-3xl ${action.bgColor} backdrop-blur-sm border border-white/10 cursor-pointer group transition-all duration-300 hover:scale-[1.02] hover:shadow-xl`}
+                className={`relative overflow-hidden rounded-2xl ${action.bgColor} backdrop-blur-sm border border-white/10 cursor-pointer group transition-all duration-300 hover:scale-[1.02] hover:shadow-lg`}
               >
                 {/* Gradient Background */}
                 <div
@@ -198,34 +187,20 @@ export default function HomePage() {
                 />
 
                 {/* Content */}
-                <div className="relative p-6 flex flex-col justify-between h-32">
-                  {/* Arrow Icon */}
-                  <div className="flex justify-end">
-                    <div className="w-8 h-8 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center">
-                      <svg
-                        className="w-4 h-4 text-white"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M7 17L17 7M17 7H7M17 7V17"
-                        />
-                      </svg>
+                <div className="relative p-6 flex items-center justify-between h-24">
+                  {/* Category and Title */}
+                  <div className="space-y-1 flex-1">
+                    <div className="text-xs text-white/70 font-medium leading-tight">
+                      {action.category}
+                    </div>
+                    <div className="text-base font-semibold text-white leading-tight">
+                      {action.label}
                     </div>
                   </div>
 
-                  {/* Category and Title */}
-                  <div className="space-y-1">
-                    <span className="text-xs text-white/70 font-medium">
-                      {action.category}
-                    </span>
-                    <h3 className="text-sm font-semibold text-white">
-                      {action.label}
-                    </h3>
+                  {/* Icon */}
+                  <div className="w-10 h-10 bg-white/10 backdrop-blur-sm rounded-full flex items-center justify-center group-hover:bg-white/20 transition-colors duration-300 flex-shrink-0">
+                    <action.icon className="w-5 h-5 text-white" />
                   </div>
                 </div>
               </div>
@@ -239,17 +214,48 @@ export default function HomePage() {
             <h2 className="text-lg font-semibold text-foreground">
               Your Content
             </h2>
+            {photos.length === 0 && !isLoadingImages && (
+              <Button
+                onClick={() => setIsUploadDialogOpen(true)}
+                className="bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/80 hover:to-brand-accent/80 text-white"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Photos to Gallery
+              </Button>
+            )}
           </div>
 
-          <PhotoGallery
-            photos={photos}
-            imageData={allContent}
-            isLoading={isLoadingImages}
-            emptyMessage="No images found. Upload some content to get started!"
-            showStats={true}
-            showLocation={true}
-            showTimestamp={true}
-          />
+          {photos.length === 0 && !isLoadingImages ? (
+            <div className="text-center py-12">
+              <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-brand-primary/20 to-brand-accent/20 rounded-full flex items-center justify-center">
+                <Plus className="w-12 h-12 text-brand-primary" />
+              </div>
+              <h3 className="text-lg font-semibold text-foreground mb-2">
+                No photos yet
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Start building your gallery by uploading your first photos
+              </p>
+              <Button
+                onClick={() => setIsUploadDialogOpen(true)}
+                size="lg"
+                className="bg-gradient-to-r from-brand-primary to-brand-accent hover:from-brand-primary/80 hover:to-brand-accent/80 text-white"
+              >
+                <Plus className="w-5 h-5 mr-2" />
+                Add Photos to Gallery
+              </Button>
+            </div>
+          ) : (
+            <PhotoGallery
+              photos={photos}
+              imageData={allContent}
+              isLoading={isLoadingImages}
+              emptyMessage="No images found. Upload some content to get started!"
+              showStats={true}
+              showLocation={true}
+              showTimestamp={true}
+            />
+          )}
         </div>
       </div>
 
