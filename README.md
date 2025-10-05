@@ -95,8 +95,8 @@ EchoO is a cutting-edge AI-powered influencer app designed to help content creat
 1. **Clone the repository**
 
    ```bash
-   git clone https://github.com/your-username/echoo-app.git
-   cd echoo-app
+   git clone https://github.com/hyperparameters/echoo.git
+   cd echoo
    ```
 
 2. **Install dependencies**
@@ -261,7 +261,7 @@ Required environment variables for production:
 ```env
 NEXT_PUBLIC_API_BASE_URL=https://api.echoo.ing
 NEXT_PUBLIC_N8N_WEBHOOK_URL=https://your-n8n-instance.com/webhook/chat
-NEXT_PUBLIC_FILECOIN_GATEWAY=https://gateway.pinata.cloud
+FILECOIN_UPLOAD_API_URL=<cloudflare-worker-upload-url>
 ```
 
 ## 🧪 Development
@@ -296,16 +296,6 @@ pnpm test:watch
 pnpm test:coverage
 ```
 
-## 🤝 Contributing
-
-We welcome contributions to EchoO! Please follow these guidelines:
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Commit your changes**: `git commit -m 'Add amazing feature'`
-4. **Push to the branch**: `git push origin feature/amazing-feature`
-5. **Open a Pull Request**
-
 ### Development Guidelines
 
 - Follow the existing code style and patterns
@@ -326,16 +316,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [N8N Setup Guide](./N8N_SETUP.md)
 - [Component Documentation](./components/README.md)
 
-### Getting Help
-
-- **Issues**: [GitHub Issues](https://github.com/your-username/echoo-app/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-username/echoo-app/discussions)
-- **Email**: support@echoo.ing
-
 ### Community
 
-- **Discord**: [Join our Discord](https://discord.gg/echoo)
-- **Twitter**: [@EchoOApp](https://twitter.com/EchoOApp)
+- **Twitter**: [@EchoOApp](https://twitter.com/echoo_ai)
 - **Website**: [echoo.ing](https://echoo.ing)
 
 ## 🗺️ Roadmap
