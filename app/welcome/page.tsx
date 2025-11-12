@@ -60,7 +60,7 @@ export default function WelcomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-black">
       {/* Hero Section */}
       <div className="relative overflow-hidden">
         {/* Background Elements */}
@@ -70,27 +70,27 @@ export default function WelcomePage() {
           <div className="absolute bottom-20 left-20 w-24 h-24 bg-primary/5 rounded-full blur-2xl animate-pulse delay-2000" />
         </div>
 
-        <div className="relative px-6 pt-8 pb-4">
-          <div className="max-w-md mx-auto text-center space-y-4">
+        <div className="relative px-6 pt-12 pb-8">
+          <div className="max-w-md mx-auto text-center space-y-6">
             {/* Logo with Animation */}
             <div className="flex justify-center">
               <div className="relative">
-                <div className="absolute inset-0 bg-primary/20 rounded-full blur-xl animate-pulse" />
+                <div className="absolute inset-0 bg-white/10 rounded-full blur-xl animate-pulse" />
                 <Logo
                   variant="default"
                   width={100}
                   height={100}
-                  className="relative z-10"
+                  className="relative z-10 text-white"
                 />
               </div>
             </div>
 
             {/* Welcome Message */}
-            <div className="space-y-2">
-              <h1 className="text-xl font-bold text-foreground">
+            <div className="space-y-3">
+              <h1 className="text-2xl font-bold text-white">
                 Hello, {userName}!
               </h1>
-              <p className="text-sm text-muted-foreground leading-relaxed">
+              <p className="text-white/80 leading-relaxed">
                 Let's get you started on your influence journey
               </p>
             </div>
@@ -110,7 +110,7 @@ export default function WelcomePage() {
                     <div className="flex flex-col items-center text-center space-y-4 px-4">
                       {/* Illustration */}
                       <div className="relative w-full h-96 flex items-center justify-center">
-                        <div className="relative w-80 h-80 rounded-2xl overflow-hidden bg-background/5 border border-border/20 shadow-lg">
+                        <div className="relative w-80 h-80 rounded-2xl overflow-hidden bg-white/5 border border-white/10 shadow-lg">
                           <Image
                             src={step.illustration}
                             alt={step.title}
@@ -123,11 +123,11 @@ export default function WelcomePage() {
                       </div>
 
                       {/* Text Content */}
-                      <div className="space-y-1 max-w-sm">
-                        <h2 className="text-lg font-bold text-foreground">
+                      <div className="space-y-2 max-w-sm">
+                        <h2 className="text-xl font-bold text-white">
                           {step.title}
                         </h2>
-                        <p className="text-muted-foreground text-xs leading-relaxed">
+                        <p className="text-white/70 text-sm leading-relaxed">
                           {step.description}
                         </p>
                       </div>
@@ -139,8 +139,8 @@ export default function WelcomePage() {
                             key={index}
                             className={`w-2 h-2 rounded-full transition-all duration-300 ${
                               index === step.id - 1
-                                ? "bg-primary w-8"
-                                : "bg-muted-foreground/30"
+                                ? "bg-white w-8"
+                                : "bg-white/30"
                             }`}
                           />
                         ))}
@@ -165,9 +165,9 @@ export default function WelcomePage() {
         <div className="max-w-md mx-auto">
           <Button
             onClick={handleStartExploring}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
+            className="w-full bg-gradient-to-r from-brand-primary to-brand-accent hover:opacity-90 text-white font-semibold py-4 px-6 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300"
           >
-            Continue
+            Get Started
           </Button>
         </div>
       </div>

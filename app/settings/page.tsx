@@ -3,11 +3,12 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { usePrivy } from "@privy-io/react-auth";
 import { Switch } from "@/components/ui/switch";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   ChevronRight,
-  User,
+  User as UserIcon,
   Shield,
   Bell,
   Moon,
@@ -26,10 +27,125 @@ import {
   Trash2,
 } from "lucide-react";
 import { AppLayout } from "@/components/app-layout";
-import { useAuth } from "@/stores/authStore";
+import { useRouter } from 'next/navigation';
+
+// OAuth provider user data types
+type OAuthUser = {
+  id: string;
+  name?: string;
+  email?: string;
+  imageUrl?: string;
+  username?: string;
+};
+
+type UserWithSocials = {
+  // Base user properties
+  id?: string;
+  username?: string;
+  selfie_url?: string;
+  email?: {
+    address?: string;
+    verified?: boolean;
+  };
+  
+  // OAuth provider data
+  twitter?: OAuthUser & {
+    // Twitter-specific fields
+    screenName?: string;
+    profileImageUrlHttps?: string;
+  };
+  
+  discord?: OAuthUser & {
+    // Discord-specific fields
+    discriminator?: string;
+    avatar?: string;
+    global_name?: string;
+  };
+  
+  google?: OAuthUser & {
+    // Google-specific fields
+    picture?: string;
+    given_name?: string;
+    family_name?: string;
+  };
+  
+  // Common OAuth fields that might be present
+  oauth?: {
+    provider: 'google' | 'twitter' | 'discord';
+    accessToken?: string;
+    refreshToken?: string;
+    expiresAt?: number;
+  };
+};
 
 export default function SettingsPage() {
-  const { user: userInfo, logout } = useAuth();
+  const { user, logout: privyLogout } = usePrivy();
+  const router = useRouter();
+  
+  const handleLogout = async () => {
+    await privyLogout();
+    router.push('/');
+  };
+  
+  // Type assertion for the user object
+  const typedUser = user as UserWithSocials;
+
+  // Get display name based on the authentication method
+  const getDisplayName = () => {
+    // Try to get the most appropriate display name in order of priority
+    if (typedUser?.username) return typedUser.username;
+    if (typedUser?.twitter?.name) return typedUser.twitter.name;
+    if (typedUser?.discord?.global_name) return typedUser.discord.global_name;
+    if (typedUser?.google?.name) return typedUser.google.name;
+    if (typedUser?.email?.address) return typedUser.email.address.split('@')[0];
+    return 'User';
+  };
+
+  // Get social handle based on the authentication method (only one source)
+  const getSocialHandle = () => {
+    // Return the most specific handle in order of priority
+    if (typedUser?.twitter?.screenName) return `@${typedUser.twitter.screenName}`;
+    if (typedUser?.twitter?.username) return `@${typedUser.twitter.username}`;
+    if (typedUser?.discord?.username) return `${typedUser.discord.username}${typedUser.discord.discriminator ? `#${typedUser.discord.discriminator}` : ''}`;
+    if (typedUser?.google?.email) return typedUser.google.email;
+    if (typedUser?.email?.address) return typedUser.email.address;
+    return '';
+  };
+
+  // Get the best available profile picture URL
+  const getProfilePictureUrl = () => {
+    // First check for selfie URL from the user object
+    if (typedUser?.selfie_url) {
+      return typedUser.selfie_url;
+    }
+    
+    // Fallback to OAuth provider profile pictures if no selfie is available
+    if (typedUser?.google?.picture) {
+      // Google profile pictures can have size parameters
+      return typedUser.google.picture.replace(/=s\d+(-c)?$/, '=s400-c');
+    }
+    
+    if (typedUser?.twitter?.profileImageUrlHttps) {
+      // Twitter profile pictures can be modified to get larger sizes
+      return typedUser.twitter.profileImageUrlHttps.replace('_normal', '_400x400');
+    }
+    
+    if (typedUser?.discord?.avatar) {
+      // Discord avatar URL construction if needed
+      const userId = typedUser.discord.id;
+      const avatarHash = typedUser.discord.avatar;
+      return `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.png?size=256`;
+    }
+    
+    // Default fallback
+    return '/default-avatar.png';
+  };
+
+  const userInfo = {
+    username: getDisplayName(),
+    selfie_url: getProfilePictureUrl(),
+    social_handle: getSocialHandle()
+  };
   const [settings, setSettings] = useState({
     notifications: true,
     darkMode: true,
@@ -47,7 +163,7 @@ export default function SettingsPage() {
     {
       title: "Account Settings",
       items: [
-        { icon: User, label: "Personal Information", hasChevron: true },
+        { icon: UserIcon, label: "Personal Information", hasChevron: true },
         { icon: Shield, label: "Connected Accounts", hasChevron: true },
         { icon: Shield, label: "Privacy & Security", hasChevron: true },
       ],
@@ -130,8 +246,8 @@ export default function SettingsPage() {
   return (
     <AppLayout>
       {/* Header */}
-      <div className="p-6">
-        <h1 className="text-2xl font-bold text-foreground mb-6">Settings</h1>
+      <div className="p-6 text-white">
+        <h1 className="text-2xl font-bold mb-6">Settings</h1>
 
         {/* User Info Card */}
         <Card className="glass-card border-border/50 mb-6">
@@ -147,10 +263,10 @@ export default function SettingsPage() {
               </AvatarFallback>
             </Avatar>
             <div className="flex-1">
-              <h3 className="font-semibold text-foreground">
+              <h3 className="font-semibold text-white">
                 {userInfo?.username}
               </h3>
-              <p className="text-muted-foreground">{userInfo?.instagram_url}</p>
+              <p className="text-white/70">{userInfo?.social_handle}</p>
               <Button
                 variant="ghost"
                 size="sm"
@@ -166,7 +282,7 @@ export default function SettingsPage() {
         <div className="space-y-6">
           {settingSections.map((section, sectionIndex) => (
             <div key={sectionIndex} className="space-y-3">
-              <h2 className="text-lg font-semibold text-foreground">
+              <h2 className="text-lg font-semibold">
                 {section.title}
               </h2>
               <Card className="glass-card border-border/50">
@@ -181,22 +297,22 @@ export default function SettingsPage() {
                       }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <item.icon className="w-5 h-5 text-muted-foreground" />
-                        <span className="text-foreground">{item.label}</span>
+                        <item.icon className="w-5 h-5 text-white/80" />
+                        <span className="text-white">{item.label}</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         {item.value && (
-                          <span className="text-sm text-muted-foreground">
+                          <span className="text-sm text-white/80">
                             {item.value}
                           </span>
                         )}
-                        {item.toggle ? (
+                        {'toggle' in item ? (
                           <Switch
                             checked={item.value as boolean}
                             onCheckedChange={item.onToggle}
                           />
                         ) : item.hasChevron ? (
-                          <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                          <ChevronRight className="w-4 h-4 text-white/80" />
                         ) : null}
                       </div>
                     </div>
@@ -208,14 +324,14 @@ export default function SettingsPage() {
 
           {/* Account Actions */}
           <div className="space-y-3">
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 className="text-lg font-semibold text-white">
               Account Actions
             </h2>
             <div className="space-y-3">
               <Button
                 variant="outline"
                 className="w-full justify-start border-border hover:bg-accent/50 bg-transparent"
-                onClick={logout}
+                onClick={handleLogout}
               >
                 <LogOut className="w-4 h-4 mr-3" />
                 Sign Out

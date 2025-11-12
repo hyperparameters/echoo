@@ -1,20 +1,33 @@
-import type React from "react";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import { Analytics } from "@vercel/analytics/next";
 import { Suspense } from "react";
 import { Providers } from "@/components/providers";
+import { PrivyProvider } from "@/components/privy-provider";
 import "./globals.css";
+
+// This is required for Next.js 13+ to ensure proper client-side routing
+const PRIVY_APP_ID = process.env.NEXT_PUBLIC_PRIVY_APP_ID;
+if (!PRIVY_APP_ID) {
+  throw new Error('NEXT_PUBLIC_PRIVY_APP_ID environment variable is not set');
+}
+
+// Viewport configuration
+export const viewport = {
+  themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  viewportFit: "cover"
+};
 
 export const metadata: Metadata = {
   title: "Echoo - Transform your content into influence",
   description: "AI-powered influencer app for content creators",
   generator: "v0.app",
   manifest: "/manifest.json",
-  themeColor: "#000000",
-  viewport:
-    "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -49,16 +62,16 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body
-        className={`font-sans ${GeistSans.variable} ${GeistMono.variable} antialiased`}
-      >
-        <Providers>
-          <Suspense fallback={<div>Loading...</div>}>
-            <div className="min-h-screen radial-gradient-bg">{children}</div>
-          </Suspense>
-        </Providers>
-        <Analytics />
+    <html lang="en" className={`dark ${GeistSans.variable} ${GeistMono.variable} font-sans`}>
+      <body>
+        <PrivyProvider>
+          <Providers>
+            <Suspense fallback={<div>Loading...</div>}>
+              <div className="min-h-screen radial-gradient-bg">{children}</div>
+              <Analytics />
+            </Suspense>
+          </Providers>
+        </PrivyProvider>
       </body>
     </html>
   );

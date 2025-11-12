@@ -57,8 +57,8 @@ export default function DetailsPage() {
     <div className="min-h-screen flex flex-col p-6">
       {/* Header */}
       <div className="text-center space-y-2 mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Tell us about yourself</h1>
-        <p className="text-muted-foreground">Help us personalize your experience</p>
+        <h1 className="text-2xl font-bold text-white">Tell us about yourself</h1>
+        <p className="text-white/80">Help us personalize your experience</p>
       </div>
 
       {/* Form */}
@@ -67,26 +67,26 @@ export default function DetailsPage() {
         <Card className="glass-card border-border/50">
           <CardContent className="p-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name *</Label>
+              <Label htmlFor="fullName" className="text-white">Full Name *</Label>
               <Input
                 id="fullName"
                 placeholder="Enter your name"
                 value={formData.fullName}
                 onChange={(e) => setFormData((prev) => ({ ...prev, fullName: e.target.value }))}
-                className="bg-input border-border"
+                className="bg-input border-border text-white placeholder:text-white/50"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="instagram">Instagram Handle</Label>
+              <Label htmlFor="instagram" className="text-white">Instagram Handle</Label>
               <div className="relative">
-                <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Instagram className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-white/70" />
                 <Input
                   id="instagram"
                   placeholder="@yourusername"
                   value={formData.instagramHandle}
                   onChange={(e) => setFormData((prev) => ({ ...prev, instagramHandle: e.target.value }))}
-                  className="bg-input border-border pl-10"
+                  className="bg-input border-border pl-10 text-white placeholder:text-white/50"
                 />
               </div>
             </div>
@@ -97,7 +97,7 @@ export default function DetailsPage() {
         <Card className="glass-card border-border/50">
           <CardContent className="p-6 space-y-4">
             <div className="space-y-3">
-              <Label>Select your interests *</Label>
+              <Label className="text-white">Select your interests *</Label>
               <div className="flex flex-wrap gap-2">
                 {availableInterests.map((interest) => (
                   <Badge
@@ -105,8 +105,8 @@ export default function DetailsPage() {
                     variant={formData.interests.includes(interest) ? "default" : "outline"}
                     className={`cursor-pointer transition-all ${
                       formData.interests.includes(interest)
-                        ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                        : "border-border hover:border-primary/50"
+                        ? "bg-primary text-white hover:bg-primary/90"
+                        : "border-white/30 text-white hover:border-primary/50"
                     }`}
                     onClick={() => toggleInterest(interest)}
                   >
@@ -122,16 +122,16 @@ export default function DetailsPage() {
         <Card className="glass-card border-border/50">
           <CardContent className="p-6 space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="bio">Bio (Optional)</Label>
+              <Label htmlFor="bio" className="text-white">Bio (Optional)</Label>
               <Textarea
                 id="bio"
                 placeholder="Tell us a bit about yourself..."
                 value={formData.bio}
                 onChange={(e) => setFormData((prev) => ({ ...prev, bio: e.target.value }))}
-                className="bg-input border-border resize-none"
+                className="bg-input border-border resize-none text-white placeholder:text-white/50"
                 maxLength={200}
               />
-              <p className="text-xs text-muted-foreground text-right">{formData.bio.length}/200</p>
+              <p className="text-xs text-white/60 text-right">{formData.bio.length}/200</p>
             </div>
           </CardContent>
         </Card>
@@ -142,7 +142,7 @@ export default function DetailsPage() {
         <Button
           onClick={handleSubmit}
           disabled={!isValid}
-          className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+          className="w-full bg-primary hover:bg-primary/90 text-white"
         >
           Complete Setup
         </Button>

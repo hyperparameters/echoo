@@ -145,7 +145,7 @@ export function PhotoGallery({
   if (isLoading) {
     return (
       <div className={`flex items-center justify-center py-12 ${className}`}>
-        <div className="text-muted-foreground">Loading images...</div>
+        <div className="text-white/70">Loading images...</div>
       </div>
     );
   }

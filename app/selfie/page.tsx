@@ -148,8 +148,8 @@ export default function SelfiePage() {
     <div className="min-h-screen flex flex-col p-6">
       {/* Header */}
       <div className="text-center space-y-2 mb-8">
-        <h1 className="text-2xl font-bold text-foreground">Let's get to know you</h1>
-        <p className="text-muted-foreground">Take a quick selfie to personalize your experience</p>
+        <h1 className="text-2xl font-bold text-white">Let's get to know you</h1>
+        <p className="text-white/70">Take a quick selfie to personalize your experience</p>
       </div>
 
       {/* Main Content */}
@@ -169,13 +169,13 @@ export default function SelfiePage() {
                   className="w-full h-full object-cover rounded-full"
                 />
                 <div className="absolute bottom-2 right-2 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-                  <Camera className="w-4 h-4 text-primary-foreground" />
+                  <Camera className="w-4 h-4 text-white" />
                 </div>
               </div>
             ) : (
               <div className="text-center space-y-3">
-                <Camera className="w-12 h-12 text-muted-foreground mx-auto" />
-                <p className="text-sm text-muted-foreground">Tap to take or upload a selfie</p>
+                <Camera className="w-12 h-12 text-white/70 mx-auto" />
+                <p className="text-sm text-white/70">Tap to take or upload a selfie</p>
               </div>
             )}
           </div>
@@ -203,7 +203,7 @@ export default function SelfiePage() {
         >
           Continue
         </Button>
-        <Button onClick={handleSkip} variant="ghost" className="w-full text-muted-foreground hover:text-foreground">
+        <Button onClick={handleSkip} variant="ghost" className="w-full text-white/70 hover:text-white">
           Skip for now
         </Button>
       </div>

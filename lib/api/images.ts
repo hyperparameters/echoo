@@ -11,18 +11,9 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 
 // API Functions
 export const imagesApi = {
-  createImage: async (imageData: ImageCreate): Promise<ImageResponse> => {
-    return apiClient.post<ImageResponse>('/api/v1/internal/images', imageData);
-  },
-
-  getImage: async (imageId: number): Promise<ImageResponse> => {
-    return apiClient.get<ImageResponse>(`/api/v1/internal/images/${imageId}`);
-  },
-
-  updateImage: async (imageId: number, imageData: Partial<ImageCreate>): Promise<ImageResponse> => {
-    return apiClient.put<ImageResponse>(`/api/v1/internal/images/${imageId}`, imageData);
-  },
-
+  // Note: Image creation is handled by upload service, not directly by frontend
+  // Internal endpoints are called by backend services only
+  
   getUserImages: async (): Promise<ImageListResponse[]> => {
     return apiClient.get<ImageListResponse[]>('/api/v1/images');
   },
@@ -43,6 +34,22 @@ export const imagesApi = {
 
     const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
     return apiClient.get<ImageListResponse[]>(`/api/v1/getImageList${query}`);
+  },
+};
+
+// Internal API functions (for reference, called by backend services only)
+// These should NOT be called from the frontend
+export const internalImagesApi = {
+  createImage: async (imageData: ImageCreate): Promise<ImageResponse> => {
+    return apiClient.post<ImageResponse>('/api/v1/internal/images', imageData);
+  },
+
+  getImage: async (imageId: number): Promise<ImageResponse> => {
+    return apiClient.get<ImageResponse>(`/api/v1/internal/images/${imageId}`);
+  },
+
+  updateImage: async (imageId: number, imageData: Partial<ImageCreate>): Promise<ImageResponse> => {
+    return apiClient.put<ImageResponse>(`/api/v1/internal/images/${imageId}`, imageData);
   },
 };
 

@@ -63,7 +63,7 @@ export function JoinEventDialog({
             <p>
               Are you sure you want to join <strong>{eventName}</strong>?
             </p>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-white/70">
               Your selfie will be used to automatically find and retrieve your
               photos from this event.
             </p>

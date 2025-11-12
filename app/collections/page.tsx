@@ -67,10 +67,10 @@ export default function CollectionsPage() {
       <div className="p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">My Collections</h1>
-            <p className="text-muted-foreground">Organize your content by themes</p>
+            <h1 className="text-2xl font-bold text-white">My Collections</h1>
+            <p className="text-white/70">Organize your content by themes</p>
           </div>
-          <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Button size="sm" className="bg-primary hover:bg-primary/90 text-white">
             <Plus className="w-4 h-4 mr-2" />
             New Collection
           </Button>
@@ -84,8 +84,8 @@ export default function CollectionsPage() {
               variant={activeFilter === filter ? "default" : "outline"}
               className={`cursor-pointer whitespace-nowrap transition-all ${
                 activeFilter === filter
-                  ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                  : "border-border hover:border-primary/50"
+                  ? "bg-primary text-white hover:bg-primary/90"
+                  : "border-border text-white/70 hover:border-primary/50"
               }`}
               onClick={() => setActiveFilter(filter)}
             >
@@ -111,7 +111,7 @@ export default function CollectionsPage() {
                   </div>
                 </div>
                 <CardContent className="p-3 space-y-1">
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center justify-between text-xs text-white/70">
                     <span>{collection.itemCount} items</span>
                     <span>{collection.lastUpdated}</span>
                   </div>
@@ -122,13 +122,13 @@ export default function CollectionsPage() {
         ) : (
           <div className="flex flex-col items-center justify-center py-12 space-y-4">
             <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center">
-              <Plus className="w-8 h-8 text-muted-foreground" />
+              <Plus className="w-8 h-8 text-white/70" />
             </div>
             <div className="text-center space-y-2">
-              <h3 className="text-lg font-semibold text-foreground">Start organizing your content</h3>
-              <p className="text-muted-foreground">Create collections to group your photos and videos by theme</p>
+              <h3 className="text-lg font-semibold text-white">Start organizing your content</h3>
+              <p className="text-white/70">Create collections to group your photos and videos by theme</p>
             </div>
-            <Button className="bg-primary hover:bg-primary/90 text-primary-foreground">Create First Collection</Button>
+            <Button className="bg-primary hover:bg-primary/90 text-white">Create First Collection</Button>
           </div>
         )}
       </div>

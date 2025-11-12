@@ -71,7 +71,7 @@ export default function EventGalleryPage() {
                 variant="ghost"
                 size="icon"
                 onClick={handleBack}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-white/70 hover:text-white"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
@@ -82,7 +82,7 @@ export default function EventGalleryPage() {
             </div>
           </div>
           <div className="flex items-center justify-center py-12">
-            <div className="text-muted-foreground">Loading gallery...</div>
+            <div className="text-white/70">Loading gallery...</div>
           </div>
         </div>
       </AppLayout>
@@ -99,18 +99,18 @@ export default function EventGalleryPage() {
                 variant="ghost"
                 size="icon"
                 onClick={handleBack}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-white/70 hover:text-white"
               >
                 <ArrowLeft className="w-5 h-5" />
               </Button>
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="text-2xl font-bold text-white">
                 Event Gallery
               </h1>
             </div>
           </div>
           <div className="flex items-center justify-center py-12">
             <div className="text-center space-y-4">
-              <div className="text-muted-foreground">
+              <div className="text-white/70">
                 Failed to load gallery images
               </div>
               <Button onClick={() => window.location.reload()}>
@@ -133,15 +133,15 @@ export default function EventGalleryPage() {
               variant="ghost"
               size="icon"
               onClick={handleBack}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-white/70 hover:text-white"
             >
               <ArrowLeft className="w-5 h-5" />
             </Button>
             {/* <div>
-              <h1 className="text-2xl font-bold text-foreground">
+              <h1 className="text-2xl font-bold text-white">
                 {event?.name || "Event Gallery"}
               </h1>
-              <p className="text-muted-foreground">
+              <p className="text-white/70">
                 {event?.description || "Event photos and memories"}
               </p>
             </div> */}
@@ -151,7 +151,7 @@ export default function EventGalleryPage() {
               size="icon"
               variant="ghost"
               onClick={handleShare}
-              className="text-muted-foreground hover:text-foreground"
+              className="text-white/70 hover:text-white"
             >
               <Share2 className="w-5 h-5" />
             </Button>
@@ -165,24 +165,24 @@ export default function EventGalleryPage() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {event.event_date && (
                   <div className="flex items-center space-x-2">
-                    <Calendar className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
+                    <Calendar className="w-4 h-4 text-white/70" />
+                    <span className="text-sm text-white/70">
                       {new Date(event.event_date).toLocaleDateString()}
                     </span>
                   </div>
                 )}
                 {event.location && (
                   <div className="flex items-center space-x-2">
-                    <MapPin className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
+                    <MapPin className="w-4 h-4 text-white/70" />
+                    <span className="text-sm text-white/70">
                       {event.location}
                     </span>
                   </div>
                 )}
                 {event.category && (
                   <div className="flex items-center space-x-2">
-                    <Users className="w-4 h-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
+                    <Users className="w-4 h-4 text-white/70" />
+                    <span className="text-sm text-white/70">
                       {event.category}
                     </span>
                   </div>
@@ -194,7 +194,7 @@ export default function EventGalleryPage() {
 
         {/* Gallery Stats */}
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-semibold text-white">
             Gallery ({photos.length} photos)
           </h2>
         </div>

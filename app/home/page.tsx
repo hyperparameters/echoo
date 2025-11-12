@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,6 +22,7 @@ import { FileUploadDialog } from "@/components/file-upload-dialog";
 import { FilecoinUploadResponse, UploadService } from "@/services/upload";
 import { imagesApi } from "@/lib/api/images";
 import { ImageListResponse } from "@/lib/api/types";
+import { usePrivy } from "@privy-io/react-auth";
 
 interface ContentPost {
   id: number;
@@ -38,37 +39,45 @@ interface ContentPost {
 
 export default function HomePage() {
   const router = useRouter();
+  const { user, authenticated, login } = usePrivy();
   const [userName, setUserName] = useState("");
   const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [apiImages, setApiImages] = useState<ImageListResponse[]>([]);
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
 
+  // Redirect to login if not authenticated
   useEffect(() => {
-    const userData = localStorage.getItem("echooUser");
-    if (userData) {
-      const user = JSON.parse(userData);
-      setUserName(user.fullName);
+    if (!authenticated) {
+      login();
+      return;
     }
-  }, []);
 
-  const fetchApiImages = async () => {
+    // Set user name if available
+    if (user) {
+      const name = user.email?.address || user.twitter?.username || user.discord?.username || 'User';
+      setUserName(name);
+    }
+  }, [authenticated, login, user]);
+
+  // Fetch API images when component mounts or refreshKey changes
+  const fetchApiImages = useCallback(async () => {
+    if (!authenticated) return;
+    
     try {
       setIsLoadingImages(true);
       const images = await imagesApi.getUserImages();
       setApiImages(images);
     } catch (error) {
-      console.error("Failed to fetch images from API:", error);
-      // Keep existing images on error
+      console.error('Failed to fetch images:', error);
     } finally {
       setIsLoadingImages(false);
     }
-  };
+  }, [authenticated]);
 
   useEffect(() => {
-    // Fetch images from API
     fetchApiImages();
-  }, [refreshKey]);
+  }, [fetchApiImages, refreshKey]);
 
   const handleUploadComplete = (responses: FilecoinUploadResponse[]) => {
     console.log("Upload completed:", responses);
@@ -144,10 +153,10 @@ export default function HomePage() {
       <div className="p-6 space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">
+            <h1 className="text-2xl font-bold text-white">
               Hi, {userName}!
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-white/70">
               Ready to grow your influence?
             </p>
           </div>
@@ -155,14 +164,14 @@ export default function HomePage() {
             <Button
               size="icon"
               variant="ghost"
-              className="text-muted-foreground hover:text-foreground"
+              className="text-white/70 hover:text-white"
             >
               <Search className="w-5 h-5" />
             </Button>
             <Button
               size="icon"
               variant="ghost"
-              className="text-muted-foreground hover:text-foreground"
+              className="text-white/70 hover:text-white"
             >
               <Filter className="w-5 h-5" />
             </Button>
@@ -171,7 +180,7 @@ export default function HomePage() {
 
         {/* Quick Actions - Simplified Layout */}
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-semibold text-white">
             Quick Actions
           </h2>
           <div className="grid grid-cols-2 gap-4">
@@ -211,7 +220,7 @@ export default function HomePage() {
         {/* Content Gallery */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground">
+            <h2 className="text-lg font-semibold text-white">
               Your Content
             </h2>
             {photos.length === 0 && !isLoadingImages && (
@@ -230,10 +239,10 @@ export default function HomePage() {
               <div className="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-brand-primary/20 to-brand-accent/20 rounded-full flex items-center justify-center">
                 <Plus className="w-12 h-12 text-brand-primary" />
               </div>
-              <h3 className="text-lg font-semibold text-foreground mb-2">
+              <h3 className="text-lg font-semibold text-white mb-2">
                 No photos yet
               </h3>
-              <p className="text-muted-foreground mb-6">
+              <p className="text-white/70 mb-6">
                 Start building your gallery by uploading your first photos
               </p>
               <Button

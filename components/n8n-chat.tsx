@@ -305,19 +305,19 @@ export function N8nChat({
       className={`flex flex-col min-h-[calc(100vh-80px)] ${className || ""}`}
     >
       {/* Header */}
-      <div className="p-6 border-b border-border/50">
+      <div className="p-6 border-b border-white/10 bg-black">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-brand-primary/20 to-brand-accent/20 flex items-center justify-center">
-              <Logo variant="icon" width={56} height={56} />
+            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-brand-primary/30 to-brand-accent/30 flex items-center justify-center">
+              <Logo variant="icon" width={56} height={56} className="text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-foreground">
+              <h1 className="text-xl font-bold text-white">
                 Echoo AI Assistant
               </h1>
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-brand-accent rounded-full"></div>
-                <span className="text-sm text-muted-foreground">Online</span>
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-sm text-gray-300">Online</span>
               </div>
             </div>
           </div>
@@ -325,19 +325,19 @@ export function N8nChat({
             onClick={startNewChat}
             variant="outline"
             size="sm"
-            className="flex items-center space-x-2 border-border hover:border-brand-primary hover:bg-brand-primary/10"
+            className="flex items-center space-x-2 border-white/20 hover:border-white/40 bg-black/50 hover:bg-white/10 text-white"
           >
             <Plus className="w-4 h-4" />
             <span>New Chat</span>
           </Button>
         </div>
-        <p className="text-sm text-muted-foreground mt-2">
+        <p className="text-sm text-gray-400 mt-2">
           Transform your photos into viral social media posts
         </p>
       </div>
 
       {/* Messages */}
-      <div className="flex-1 p-4 space-y-4 overflow-y-auto">
+      <div className="flex-1 p-4 space-y-4 overflow-y-auto bg-black">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -353,12 +353,12 @@ export function N8nChat({
               <Card
                 className={`${
                   message.type === "user"
-                    ? "bg-brand-gradient text-white border-none"
-                    : "glass-card border-border/50"
+                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-none"
+                    : "bg-gray-900/80 border-white/10 backdrop-blur-sm"
                 }`}
               >
                 <CardContent className="p-3">
-                  <p className="text-sm whitespace-pre-line">
+                  <p className="text-sm whitespace-pre-line text-white">
                     {message.content}
                   </p>
 
@@ -377,11 +377,7 @@ export function N8nChat({
                     )}
 
                   <p
-                    className={`text-xs mt-2 ${
-                      message.type === "user"
-                        ? "text-white/70"
-                        : "text-muted-foreground"
-                    }`}
+                    className="text-xs mt-2 text-gray-400"
                   >
                     {message.timestamp.toLocaleTimeString([], {
                       hour: "2-digit",
@@ -400,7 +396,7 @@ export function N8nChat({
                       <Badge
                         key={index}
                         variant="outline"
-                        className="cursor-pointer border-border hover:border-brand-primary hover:bg-brand-primary/10 mr-2 mb-2 text-foreground hover:text-brand-primary"
+                        className="cursor-pointer border-white/20 hover:border-white/40 hover:bg-white/10 mr-2 mb-2 text-white hover:text-white transition-colors duration-200"
                         onClick={() => handleSuggestionClick(suggestion)}
                       >
                         {suggestion}

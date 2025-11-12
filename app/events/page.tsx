@@ -73,8 +73,8 @@ export default function EventsPage() {
       <div className="p-6 pb-4">
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Events</h1>
-            <p className="text-muted-foreground">
+            <h1 className="text-2xl font-bold text-white">Events</h1>
+            <p className="text-white/70">
               Discover opportunities near you
             </p>
           </div>
@@ -89,7 +89,7 @@ export default function EventsPage() {
               <div className="text-2xl font-bold text-brand-primary">
                 {events?.length || 0}
               </div>
-              <div className="text-xs text-muted-foreground">Available</div>
+              <div className="text-xs text-white/70">Available</div>
             </CardContent>
           </Card>
           <Card className="glass-card">
@@ -97,13 +97,13 @@ export default function EventsPage() {
               <div className="text-2xl font-bold text-brand-accent">
                 {registeredEvents?.length || 0}
               </div>
-              <div className="text-xs text-muted-foreground">Attending</div>
+              <div className="text-xs text-white/70">Attending</div>
             </CardContent>
           </Card>
           <Card className="glass-card">
             <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-foreground">0</div>
-              <div className="text-xs text-muted-foreground">Hosting</div>
+              <div className="text-2xl font-bold text-white">0</div>
+              <div className="text-xs text-white/70">Hosting</div>
             </CardContent>
           </Card>
         </div>
@@ -118,7 +118,7 @@ export default function EventsPage() {
           </TabsList>
 
           <TabsContent value="all" className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground mb-4">
+            <h2 className="text-lg font-semibold text-white mb-4">
               Recommended for You
             </h2>
 
@@ -154,7 +154,7 @@ export default function EventsPage() {
               // Error state
               <Card className="glass-card">
                 <CardContent className="p-6 text-center">
-                  <p className="text-muted-foreground">
+                  <p className="text-white/70">
                     Failed to load events. Please try again later.
                   </p>
                 </CardContent>
@@ -198,10 +198,10 @@ export default function EventsPage() {
 
                       {/* Title and description */}
                       <div>
-                        <CardTitle className="text-lg text-foreground">
+                        <CardTitle className="text-lg text-white">
                           {event.name}
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-4">
+                        <p className="text-sm text-white/70 mt-1 line-clamp-4">
                           {event.description}
                         </p>
                       </div>
@@ -210,13 +210,13 @@ export default function EventsPage() {
                   <CardContent className="pt-0">
                     <div className="space-y-2">
                       {event.event_date && (
-                        <div className="flex items-center text-sm text-muted-foreground">
+                        <div className="flex items-center text-sm text-white/70">
                           <Calendar className="w-4 h-4 mr-2" />
                           {formatEventDate(event.event_date)}
                         </div>
                       )}
                       {event.location && (
-                        <div className="flex items-center text-sm text-muted-foreground">
+                        <div className="flex items-center text-sm text-white/70">
                           <MapPin className="w-4 h-4 mr-2" />
                           {event.location}
                         </div>
@@ -259,7 +259,7 @@ export default function EventsPage() {
               // Empty state
               <Card className="glass-card">
                 <CardContent className="p-6 text-center">
-                  <p className="text-muted-foreground">
+                  <p className="text-white/70">
                     No events available at the moment.
                   </p>
                 </CardContent>
@@ -268,7 +268,7 @@ export default function EventsPage() {
           </TabsContent>
 
           <TabsContent value="registered" className="space-y-4">
-            <h2 className="text-lg font-semibold text-foreground mb-4">
+            <h2 className="text-lg font-semibold text-white mb-4">
               My Registered Events
             </h2>
 
@@ -304,7 +304,7 @@ export default function EventsPage() {
               // Error state for registered events
               <Card className="glass-card">
                 <CardContent className="p-6 text-center">
-                  <p className="text-muted-foreground">
+                  <p className="text-white/70">
                     Failed to load your registered events. Please try again
                     later.
                   </p>
@@ -343,10 +343,10 @@ export default function EventsPage() {
 
                       {/* Title and description */}
                       <div>
-                        <CardTitle className="text-lg text-foreground">
+                        <CardTitle className="text-lg text-white">
                           {registeredEvent.event_name}
                         </CardTitle>
-                        <p className="text-sm text-muted-foreground mt-1 line-clamp-4">
+                        <p className="text-sm text-white/70 mt-1 line-clamp-4">
                           {registeredEvent.event_description}
                         </p>
                       </div>
@@ -355,13 +355,13 @@ export default function EventsPage() {
                   <CardContent className="pt-0">
                     <div className="space-y-2">
                       {registeredEvent.event_date && (
-                        <div className="flex items-center text-sm text-muted-foreground">
+                        <div className="flex items-center text-sm text-white/70">
                           <Calendar className="w-4 h-4 mr-2" />
                           {formatEventDate(registeredEvent.event_date)}
                         </div>
                       )}
                       {registeredEvent.event_location && (
-                        <div className="flex items-center text-sm text-muted-foreground">
+                        <div className="flex items-center text-sm text-white/70">
                           <MapPin className="w-4 h-4 mr-2" />
                           {registeredEvent.event_location}
                         </div>
@@ -387,7 +387,7 @@ export default function EventsPage() {
               // Empty state for registered events
               <Card className="glass-card">
                 <CardContent className="p-6 text-center">
-                  <p className="text-muted-foreground">
+                  <p className="text-white/70">
                     You haven't registered for any events yet.
                   </p>
                 </CardContent>

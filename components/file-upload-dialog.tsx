@@ -17,7 +17,7 @@ import {
   UploadProgress,
 } from "@/services/upload";
 import { UploadProgressBar, FileUploadProgress } from "./upload-progress-bar";
-import { useAuth } from "@/stores/authStore";
+import { usePrivy } from '@privy-io/react-auth';
 import { useQueryClient } from "@tanstack/react-query";
 
 interface FileUploadDialogProps {
@@ -37,8 +37,16 @@ export function FileUploadDialog({
   maxFileSize = 50 * 1024 * 1024, // 50MB
   acceptedFileTypes = ["image/*"],
 }: FileUploadDialogProps) {
-  const { user, logout } = useAuth();
+  const { user, authenticated, login, logout: privyLogout } = usePrivy();
   const queryClient = useQueryClient();
+  
+  // Redirect to login if not authenticated
+  React.useEffect(() => {
+    if (!authenticated) {
+      login();
+    }
+  }, [authenticated, login]);
+  
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<FileUploadProgress[]>(
     []
@@ -126,10 +134,10 @@ export function FileUploadDialog({
 
     // If no user ID found, logout and redirect to home
     console.warn("No user ID found, logging out and redirecting to home");
-    logout();
+    privyLogout();
     window.location.href = "/";
     return "0";
-  }, [user, logout]);
+  }, [user, privyLogout]);
 
   const startUpload = useCallback(async () => {
     if (selectedFiles.length === 0) return;

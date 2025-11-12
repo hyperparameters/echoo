@@ -148,8 +148,7 @@ export interface ValidationError {
 
 // Custom types for the onboarding flow
 export interface LoginCredentials {
-  email: string;
-  password: string;
+  token: string;  // Privy authentication token
 }
 
 export interface OnboardingState {
