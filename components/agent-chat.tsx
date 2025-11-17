@@ -6,34 +6,44 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { PromptInputBox } from "@/components/prompt-input-box";
-import { PlatformTrendsComponent } from "@/components/chat/PlatformTrendsComponent";
-import { PostSuggestionsComponent } from "@/components/chat/PostSuggestionsComponent";
+import { UserProfileComponent } from "@/components/chat/UserProfileComponent";
+import { InstagramPostsComponent } from "@/components/chat/InstagramPostsComponent";
+import { RegisteredEventsComponent } from "@/components/chat/RegisteredEventsComponent";
+import { EventImagesComponent } from "@/components/chat/EventImagesComponent";
+import { EventSummaryComponent } from "@/components/chat/EventSummaryComponent";
+import { ContentStrategyComponent } from "@/components/chat/ContentStrategyComponent";
 import { Plus, MessageSquare } from "lucide-react";
+import { usePrivy } from "@privy-io/react-auth";
 
-interface N8nChatProps {
-  webhookUrl: string;
+interface AgentChatProps {
+  agentUrl: string; // Now expects OpenServ Platform API URL
   userName?: string;
   className?: string;
   user_id: number | undefined;
+  agentId?: string; // OpenServ Agent ID
+  openservApiKey?: string; // OpenServ API Key
 }
 
-interface N8nMessage {
+interface ChatMessage {
   id: string;
   type: "user" | "ai";
   content: string;
   timestamp: Date;
   suggestions?: string[];
-  customComponent?: "platform_trends" | "post_suggestions" | null;
+  customComponent?: "user_profile" | "instagram_posts" | "registered_events" | "event_images" | "event_summary" | "content_strategy" | null;
   customData?: any;
 }
 
-export function N8nChat({
-  webhookUrl,
+export function AgentChat({
+  agentUrl,
   userName,
   className,
   user_id,
-}: N8nChatProps) {
-  const [messages, setMessages] = useState<N8nMessage[]>([]);
+  agentId,
+  openservApiKey,
+}: AgentChatProps) {
+  const { getAccessToken } = usePrivy();
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [sessionId, setSessionId] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -48,24 +58,50 @@ export function N8nChat({
     try {
       // Check if response has the expected structure
       if (response && typeof response === "object") {
-        // Check for platform trends response
-        if (
-          response?.output?.platform_trends &&
-          Array.isArray(response?.output?.platform_trends)
-        ) {
+        // Check for user profile response
+        if (response?.output?.success && response?.output?.profile) {
           return {
-            customComponent: "platform_trends" as const,
+            customComponent: "user_profile" as const,
             customData: response?.output,
           };
         }
 
-        // Check for post suggestions response
-        if (
-          response?.output?.post_suggestions &&
-          Array.isArray(response?.output?.post_suggestions)
-        ) {
+        // Check for Instagram posts response
+        if (response?.output?.success && response?.output?.posts && Array.isArray(response?.output?.posts)) {
           return {
-            customComponent: "post_suggestions" as const,
+            customComponent: "instagram_posts" as const,
+            customData: response?.output,
+          };
+        }
+
+        // Check for registered events response
+        if (response?.output?.success && response?.output?.events && Array.isArray(response?.output?.events)) {
+          return {
+            customComponent: "registered_events" as const,
+            customData: response?.output,
+          };
+        }
+
+        // Check for event images response
+        if (response?.output?.success && response?.output?.images && Array.isArray(response?.output?.images)) {
+          return {
+            customComponent: "event_images" as const,
+            customData: response?.output,
+          };
+        }
+
+        // Check for event summary response
+        if (response?.output?.summary && response?.output?.event_name) {
+          return {
+            customComponent: "event_summary" as const,
+            customData: response?.output,
+          };
+        }
+
+        // Check for content strategy response
+        if (response?.output?.strategy && response?.output?.strategy?.overview) {
+          return {
+            customComponent: "content_strategy" as const,
             customData: response?.output,
           };
         }
@@ -181,25 +217,26 @@ export function N8nChat({
   // Initialize with welcome message only if no messages exist
   useEffect(() => {
     if (userName && messages.length === 0) {
-      const welcomeMessage: N8nMessage = {
+      const welcomeMessage: ChatMessage = {
         id: "welcome",
         type: "ai",
-        content: `Hi ${userName}! I'm Echoo, your AI social media assistant. I specialize in transforming your photos into engaging social media posts that drive growth and engagement. Whether you need captions, hashtags, or content strategies, I'm here to help you turn your memories into viral moments. What photos would you like to work with today?`,
+        content: `Hi ${userName}! I'm Echoo, your AI assistant for discovering and sharing event photos. I can help you find AI-matched photos from events you attended, create engaging captions, and build content strategies. What would you like to explore?`,
         timestamp: new Date(),
         suggestions: [
-          "Create posts from my recent photos",
-          "Generate captions for my gallery",
-          "Suggest hashtags for my content",
+          "Show my profile",
+          "What events am I registered for?",
+          "Show my event photos",
+          "Generate a caption for my latest photo",
         ],
       };
       setMessages([welcomeMessage]);
     }
   }, [userName, messages.length]);
 
-  const sendMessageToN8n = async (content: string, files?: File[]) => {
+  const sendMessageToAgent = async (content: string, files?: File[]) => {
     if (!content.trim() && (!files || files.length === 0)) return;
 
-    const userMessage: N8nMessage = {
+    const userMessage: ChatMessage = {
       id: `user_${Date.now()}`,
       type: "user",
       content:
@@ -213,20 +250,37 @@ export function N8nChat({
     setIsTyping(true);
 
     try {
+      // Get Privy access token
+      const authToken = await getAccessToken();
+      
+      if (!authToken) {
+        throw new Error("No authentication token available");
+      }
+
+      // Call OpenServ Platform API
+      // The platform will route to our agent via webhook
       const payload = {
-        action: "sendMessage",
-        chatInput: content,
-        sessionId: sessionId,
+        messages: [
+          {
+            role: "user",
+            content: content,
+          },
+        ],
         metadata: {
           user_id: user_id,
-          files: files
-            ? files.map((f) => ({ name: f.name, size: f.size, type: f.type }))
-            : [],
+          auth_token: `Bearer ${authToken}`,
+          session_id: sessionId,
           timestamp: new Date().toISOString(),
         },
       };
 
-      const response = await fetch(webhookUrl, {
+      // Call local Next.js API route which proxies to OpenServ
+      // This avoids CORS issues and keeps API keys server-side
+      const apiEndpoint = agentId 
+        ? '/api/agent'  // Use local API route for OpenServ Platform
+        : agentUrl;     // Fallback to direct URL for backward compatibility
+
+      const response = await fetch(apiEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -240,30 +294,41 @@ export function N8nChat({
 
       const data = await response.json();
 
-      // Check if this is a custom JSON response
-      const customResponse = parseCustomResponse(data);
+      // Parse agent response
+      // OpenServ agent returns in format: { choices: [{ message: { content: "...", tool_calls: [...] } }] }
+      const agentMessage = data.choices?.[0]?.message;
+      const messageContent = agentMessage?.content || "I received your message.";
+      
+      // Check for tool calls (capability executions)
+      const toolCalls = agentMessage?.tool_calls || [];
+      let customResponse = null;
+      
+      if (toolCalls.length > 0) {
+        // Get the result from the last tool call
+        const lastToolCall = toolCalls[toolCalls.length - 1];
+        const toolResult = lastToolCall.function?.result;
+        
+        if (toolResult) {
+          customResponse = parseCustomResponse({ output: toolResult });
+        }
+      }
 
-      const aiMessage: N8nMessage = {
+      const aiMessage: ChatMessage = {
         id: `ai_${Date.now()}`,
         type: "ai",
-        content:
-          customResponse?.normalResponse ||
-          (customResponse ? "Here's your personalized content:" : null) ||
-          data.response ||
-          data.output ||
-          "I received your message but couldn't process it properly.",
+        content: customResponse?.normalResponse || messageContent,
         timestamp: new Date(),
-        suggestions: data.suggestions || [],
+        suggestions: [],
         customComponent: customResponse?.customComponent,
         customData: customResponse?.customData,
       };
 
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
-      console.error("Error sending message to n8n:", error);
+      console.error("Error sending message to agent:", error);
 
       // Fallback response
-      const errorMessage: N8nMessage = {
+      const errorMessage: ChatMessage = {
         id: `error_${Date.now()}`,
         type: "ai",
         content:
@@ -279,7 +344,7 @@ export function N8nChat({
   };
 
   const handleSuggestionClick = (suggestion: string) => {
-    sendMessageToN8n(suggestion);
+    sendMessageToAgent(suggestion);
   };
 
   const startNewChat = () => {
@@ -367,11 +432,23 @@ export function N8nChat({
                     message.customComponent &&
                     message.customData && (
                       <div className="mt-4">
-                        {message.customComponent === "platform_trends" && (
-                          <PlatformTrendsComponent data={message.customData} />
+                        {message.customComponent === "user_profile" && (
+                          <UserProfileComponent data={message.customData} />
                         )}
-                        {message.customComponent === "post_suggestions" && (
-                          <PostSuggestionsComponent data={message.customData} />
+                        {message.customComponent === "instagram_posts" && (
+                          <InstagramPostsComponent data={message.customData} />
+                        )}
+                        {message.customComponent === "registered_events" && (
+                          <RegisteredEventsComponent data={message.customData} />
+                        )}
+                        {message.customComponent === "event_images" && (
+                          <EventImagesComponent data={message.customData} />
+                        )}
+                        {message.customComponent === "event_summary" && (
+                          <EventSummaryComponent data={message.customData} />
+                        )}
+                        {message.customComponent === "content_strategy" && (
+                          <ContentStrategyComponent data={message.customData} />
                         )}
                       </div>
                     )}
@@ -435,9 +512,9 @@ export function N8nChat({
       {/* Input Area */}
       <div className="p-4 border-t border-border/50">
         <PromptInputBox
-          onSend={sendMessageToN8n}
+          onSend={sendMessageToAgent}
           isLoading={isTyping}
-          placeholder="Ask me anything about growing your influence..."
+          placeholder="Ask me anything about your event photos..."
         />
       </div>
     </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { AppLayout } from "@/components/app-layout";
-import { N8nChat } from "@/components/n8n-chat";
+import { AgentChat } from "@/components/agent-chat";
 import { usePrivy } from "@privy-io/react-auth";
 import { useState, useEffect } from "react";
 import { authApi } from "@/lib/api/auth";
@@ -21,12 +21,21 @@ export default function AgentPage() {
   const userName = backendUser?.username || privyUser?.email?.address?.split('@')[0] || "User";
   const userId = backendUser?.id;
 
-  const webhookUrl =
-    process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL || "YOUR_N8N_WEBHOOK_URL";
+  // OpenServ Platform API configuration
+  const agentUrl =
+    process.env.NEXT_PUBLIC_OPENSERV_API_URL || "https://api.openserv.ai";
+  const agentId = process.env.NEXT_PUBLIC_OPENSERV_AGENT_ID;
+  const openservApiKey = process.env.NEXT_PUBLIC_OPENSERV_API_KEY;
 
   return (
     <AppLayout>
-      <N8nChat webhookUrl={webhookUrl} userName={userName} user_id={userId} />
+      <AgentChat 
+        agentUrl={agentUrl} 
+        userName={userName} 
+        user_id={userId}
+        agentId={agentId}
+        openservApiKey={openservApiKey}
+      />
     </AppLayout>
   );
 }
