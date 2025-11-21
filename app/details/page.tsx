@@ -8,7 +8,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
-import { Instagram } from "lucide-react"
+import { Instagram, Loader2 } from "lucide-react"
+import { authApi } from "@/lib/api/auth"
 
 export default function DetailsPage() {
   const router = useRouter()
@@ -18,6 +19,7 @@ export default function DetailsPage() {
     bio: "",
     interests: [] as string[],
   })
+  const [isLoading, setIsLoading] = useState(false)
 
   const availableInterests = [
     "Fashion",
@@ -43,11 +45,38 @@ export default function DetailsPage() {
     }))
   }
 
-  const handleSubmit = () => {
-    if (formData.fullName && formData.interests.length > 0) {
-      // Store user data in localStorage for demo
+  const handleSubmit = async () => {
+    if (!formData.fullName || formData.interests.length === 0) return
+
+    setIsLoading(true)
+    try {
+      // Build Instagram URL from handle
+      let instagramUrl = null
+      if (formData.instagramHandle) {
+        const handle = formData.instagramHandle.replace(/^@/, "").trim()
+        if (handle) {
+          instagramUrl = `https://www.instagram.com/${handle}/`
+        }
+      }
+
+      // Save to backend
+      await authApi.updateProfile({
+        full_name: formData.fullName,
+        instagram_url: instagramUrl,
+        description: formData.bio,
+        interests: JSON.stringify(formData.interests),
+      })
+
+      // Also store in localStorage for local reference
       localStorage.setItem("echooUser", JSON.stringify(formData))
       router.push("/welcome")
+    } catch (error) {
+      console.error("Failed to save details:", error)
+      // Still allow proceeding if backend save fails
+      localStorage.setItem("echooUser", JSON.stringify(formData))
+      router.push("/welcome")
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -141,10 +170,17 @@ export default function DetailsPage() {
       <div className="pt-6">
         <Button
           onClick={handleSubmit}
-          disabled={!isValid}
+          disabled={!isValid || isLoading}
           className="w-full bg-primary hover:bg-primary/90 text-white"
         >
-          Complete Setup
+          {isLoading ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Saving...
+            </>
+          ) : (
+            "Complete Setup"
+          )}
         </Button>
       </div>
     </div>

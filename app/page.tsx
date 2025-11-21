@@ -11,7 +11,7 @@ import Image from "next/image";
 export default function OnboardingPage() {
   const router = useRouter();
   const { ready, authenticated, login } = usePrivy();
-  const [isLoading, setIsLoading] = useState(true);
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   const profilePhotos = [
     "/sunset-marina-bay.jpg",
@@ -25,13 +25,18 @@ export default function OnboardingPage() {
   // Handle authentication state
   useEffect(() => {
     if (!ready) return;
+    
+    // Prevent multiple redirect attempts
+    if (hasRedirected) return;
 
     if (authenticated) {
-      // Redirect to selfie page after successful authentication
+      // Mark as redirected to prevent loop
+      setHasRedirected(true);
+      console.log('🔐 User authenticated, redirecting to /selfie');
+      // For now, send all users through the onboarding flow
       router.push('/selfie');
     }
-    setIsLoading(false);
-  }, [ready, authenticated, router]);
+  }, [ready, authenticated, hasRedirected, router]);
 
   const handleOAuthLogin = async (provider: 'google' | 'twitter' | 'discord') => {
     try {
@@ -49,8 +54,8 @@ export default function OnboardingPage() {
     }
   };
 
-  // Show loading state
-  if (isLoading) {
+  // Show loading state only while Privy is initializing
+  if (!ready) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background relative overflow-hidden">
         <div className="absolute inset-0">
@@ -58,11 +63,12 @@ export default function OnboardingPage() {
         </div>
         <div className="flex flex-col items-center space-y-4 relative z-10">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
-          <p className="text-sm text-white">Loading Echo...</p>
+          <p className="text-sm text-white">Initializing...</p>
         </div>
       </div>
     );
   }
+
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background relative overflow-hidden">

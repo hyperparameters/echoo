@@ -3,14 +3,27 @@
 export interface UserProfile {
   id: number;
   username: string;
+  full_name?: string | null;
   email?: string | null;
   instagram_url?: string | null;
   twitter_url?: string | null;
   linkedin_url?: string | null;
   description?: string | null;
-  interests?: string | null; // Comma-separated string
+  interests?: string | null; // JSON string of array
   selfie_cid?: string | null;
   selfie_url?: string | null;
+  selfie_height?: number | null;
+  selfie_width?: number | null;
+  // Privy fields
+  privy_id?: string | null;
+  wallet_address?: string | null;
+  linked_wallets?: string | null; // JSON string
+  linked_emails?: string | null; // JSON string
+  linked_google?: string | null;
+  linked_twitter?: string | null;
+  privy_last_login?: string | null;
+  privy_created_at?: string | null;
+  last_login?: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -21,12 +34,16 @@ export interface UserCreate {
 }
 
 export interface UserProfileUpdate {
+  full_name?: string | null;
+  username?: string | null;
   email?: string | null;
   instagram_url?: string | null;
   twitter_url?: string | null;
   linkedin_url?: string | null;
   description?: string | null;
-  interests?: string | null; // Comma-separated string
+  interests?: string | null; // JSON string of array
+  bio?: string | null; // Alias for description
+  profile_picture?: string | null;
 }
 
 export interface UserLoginResponse {

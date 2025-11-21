@@ -14,13 +14,18 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Transform payload for OpenServ workflow
-    // Workflows expect: { message: string, metadata: {...} }
-    // Not: { messages: [{role, content}], metadata: {...} }
-    const workflowPayload = {
-      message: body.messages?.[0]?.content || '',
-      metadata: body.metadata || {}
-    }
+    // Pass through the payload as-is to the workflow
+    // Frontend sends: { messages: [{role, content}], metadata: {...} }
+    // Workflow and agent expect the same format
+    const workflowPayload = body
+    
+    console.log('📤 Sending to workflow:', JSON.stringify({
+      messages: workflowPayload.messages,
+      metadata: {
+        ...workflowPayload.metadata,
+        auth_token: workflowPayload.metadata?.auth_token ? '✅ Present' : '❌ Missing'
+      }
+    }, null, 2))
 
     // Call OpenServ Platform Workflow Webhook from server-side
     const headers: HeadersInit = {
@@ -47,7 +52,45 @@ export async function POST(request: NextRequest) {
     }
 
     const data = await response.json()
-    return NextResponse.json(data)
+    
+    // Transform OpenServ workflow response to match frontend expectations
+    // Agent capabilities return JSON strings like: { "success": true, "profile": {...} }
+    // Frontend expects: { choices: [{ message: { content, tool_calls: [{function: {result: {...}}}] } }] }
+
+    console.log('📦 Raw workflow response:', JSON.stringify(data, null, 2))
+
+    // Parse agent output if it's a JSON string
+    let agentOutput = data
+    if (typeof data === 'string') {
+      try {
+        agentOutput = JSON.parse(data)
+      } catch {
+        agentOutput = { message: data }
+      }
+    }
+
+    // Check if data is already in the correct format (choices array)
+    if (agentOutput.choices && Array.isArray(agentOutput.choices)) {
+      console.log('✅ Response already in correct format')
+      return NextResponse.json(agentOutput)
+    }
+
+    // Transform agent response to frontend format
+    const transformedResponse = {
+      choices: [{
+        message: {
+          content: agentOutput.message || agentOutput.response || 'I received your message.',
+          tool_calls: [{
+            function: {
+              result: agentOutput
+            }
+          }]
+        }
+      }]
+    }
+
+    console.log('✅ Transformed to frontend format')
+    return NextResponse.json(transformedResponse)
   } catch (error: any) {
     console.error('Agent API route error:', error)
     return NextResponse.json(

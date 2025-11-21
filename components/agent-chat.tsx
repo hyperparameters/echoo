@@ -56,53 +56,81 @@ export function AgentChat({
   // Helper function to detect and parse custom JSON responses
   const parseCustomResponse = (response: any) => {
     try {
-      // Check if response has the expected structure
-      if (response && typeof response === "object") {
-        // Check for user profile response
-        if (response?.output?.success && response?.output?.profile) {
+      // Parse if response is a JSON string (agent capabilities return strings)
+      let data = response;
+      if (typeof response === "string") {
+        try {
+          data = JSON.parse(response);
+        } catch {
+          return null;
+        }
+      }
+
+      // Check if data has the expected structure
+      if (data && typeof data === "object") {
+        let output = data?.output || data;
+
+        // Handle nested structure like { foo: { profile: {...}, success: true } }
+        if (output?.foo && typeof output.foo === 'object') {
+          output = output.foo;
+        }
+
+        // Check for user profile response (structured JSON)
+        if (output?.success && output?.profile) {
           return {
             customComponent: "user_profile" as const,
-            customData: response?.output,
+            customData: output,
+          };
+        }
+
+        // Check for user profile response (if output is the profile object itself)
+        if (output?.username || output?.full_name || output?.privy_id) {
+          return {
+            customComponent: "user_profile" as const,
+            customData: {
+              success: true,
+              profile: output,
+            },
           };
         }
 
         // Check for Instagram posts response
-        if (response?.output?.success && response?.output?.posts && Array.isArray(response?.output?.posts)) {
+        if (output?.success && output?.posts && Array.isArray(output?.posts)) {
           return {
             customComponent: "instagram_posts" as const,
-            customData: response?.output,
+            customData: output,
           };
         }
 
         // Check for registered events response
-        if (response?.output?.success && response?.output?.events && Array.isArray(response?.output?.events)) {
+        if (output?.success && output?.events && Array.isArray(output?.events)) {
           return {
             customComponent: "registered_events" as const,
-            customData: response?.output,
+            customData: output,
           };
         }
 
         // Check for event images response
-        if (response?.output?.success && response?.output?.images && Array.isArray(response?.output?.images)) {
+        if (output?.success && output?.images && Array.isArray(output?.images)) {
           return {
             customComponent: "event_images" as const,
-            customData: response?.output,
+            customData: output,
           };
         }
 
         // Check for event summary response
-        if (response?.output?.summary && response?.output?.event_name) {
+        if (output?.summary && output?.event_name) {
           return {
             customComponent: "event_summary" as const,
-            customData: response?.output,
+            customData: output,
           };
         }
 
         // Check for content strategy response
-        if (response?.output?.strategy && response?.output?.strategy?.overview) {
+        if (output?.strategy && output?.strategy?.overview) {
           return {
             customComponent: "content_strategy" as const,
-            customData: response?.output,
+            customData: output,
           };
         }
 
