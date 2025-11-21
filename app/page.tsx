@@ -7,11 +7,13 @@ import { Loader2, Mail, Twitter, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Ripple } from "@/components/magicui/ripple";
 import Image from "next/image";
+import { authApi, hasSelfie, hasDetails, isExistingUser } from "@/lib/api/auth";
 
 export default function OnboardingPage() {
   const router = useRouter();
   const { ready, authenticated, login } = usePrivy();
   const [hasRedirected, setHasRedirected] = useState(false);
+  const [isCheckingStatus, setIsCheckingStatus] = useState(false);
 
   const profilePhotos = [
     "/sunset-marina-bay.jpg",
@@ -32,9 +34,13 @@ export default function OnboardingPage() {
     if (authenticated) {
       // Mark as redirected to prevent loop
       setHasRedirected(true);
-      console.log('🔐 User authenticated, redirecting to /selfie');
-      // For now, send all users through the onboarding flow
-      router.push('/selfie');
+      setIsCheckingStatus(true);
+      console.log('🔐 User authenticated, checking onboarding status...');
+      
+      // Small delay to ensure backend auth is ready
+      setTimeout(() => {
+        checkOnboardingStatus();
+      }, 1500);
     }
   }, [ready, authenticated, hasRedirected, router]);
 
@@ -54,6 +60,82 @@ export default function OnboardingPage() {
     }
   };
 
+  const checkOnboardingStatus = async () => {
+    try {
+      console.log('📋 Checking if user has completed onboarding...');
+      
+      // Fetch user profile with retry
+      let profile = null;
+      let attempts = 0;
+      
+      while (attempts < 3) {
+        try {
+          profile = await authApi.getProfile();
+          console.log('✅ Profile fetched:', {
+            full_name: profile?.full_name,
+            instagram_url: profile?.instagram_url,
+            selfie_cid: profile?.selfie_cid
+          });
+          break;
+        } catch (err: any) {
+          attempts++;
+          if (attempts < 3) {
+            console.log(`⏳ Retry ${attempts}/3...`);
+            await new Promise(r => setTimeout(r, 500));
+          } else {
+            throw err;
+          }
+        }
+      }
+
+      if (!profile) {
+        throw new Error('Could not fetch profile');
+      }
+
+      // Check if user is new or existing using helper functions
+      const hasSelfieStep = hasSelfie(profile);
+      const hasDetailsStep = hasDetails(profile);
+      const userIsExisting = isExistingUser(profile);
+
+      console.log('👤 User status check:', {
+        hasSelfieStep,
+        hasDetailsStep,
+        userIsExisting,
+        selfie_cid: profile.selfie_cid,
+        selfie_url: profile.selfie_url,
+        full_name: profile.full_name,
+        instagram_url: profile.instagram_url,
+        description: profile.description,
+        interests: profile.interests
+      });
+
+      if (userIsExisting) {
+        console.log('👤 Existing user detected - redirecting to /home');
+        router.push('/home');
+      } else {
+        console.log('🆕 New user detected - starting onboarding');
+        // Determine where to start in the onboarding flow
+        if (!hasSelfieStep) {
+          console.log('📷 No selfie found - redirecting to /selfie');
+          router.push('/selfie');
+        } else if (!hasDetailsStep) {
+          console.log('📝 No details found - redirecting to /details');
+          router.push('/details');
+        } else {
+          console.log('🎉 Onboarding complete - redirecting to /welcome then /home');
+          router.push('/welcome');
+        }
+      }
+    } catch (error: any) {
+      console.error('❌ Error checking onboarding status:', error);
+      // Default to new user flow if check fails
+      console.log('⚠️ Defaulting to new user flow (/selfie)');
+      router.push('/selfie');
+    } finally {
+      setIsCheckingStatus(false);
+    }
+  };
+
   // Show loading state only while Privy is initializing
   if (!ready) {
     return (
@@ -64,6 +146,21 @@ export default function OnboardingPage() {
         <div className="flex flex-col items-center space-y-4 relative z-10">
           <Loader2 className="w-8 h-8 animate-spin text-primary" />
           <p className="text-sm text-white">Initializing...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show checking status while verifying user
+  if (isCheckingStatus) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-background relative overflow-hidden">
+        <div className="absolute inset-0">
+          <Ripple />
+        </div>
+        <div className="flex flex-col items-center space-y-4 relative z-10">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-sm text-white">Checking your account...</p>
         </div>
       </div>
     );

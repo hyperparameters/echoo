@@ -36,8 +36,32 @@ export const authApi = {
 export const isOnboardingComplete = (user: UserProfile): boolean => {
   return Boolean(
     user?.username &&
-    user?.selfie_url &&
     (user?.email || user?.instagram_url || user?.description || user?.interests)
+  );
+};
+
+// Helper function to determine if user has completed selfie step
+export const hasSelfie = (user: UserProfile): boolean => {
+  return Boolean(user?.selfie_cid || user?.selfie_url);
+};
+
+// Helper function to determine if user has completed details step
+export const hasDetails = (user: UserProfile): boolean => {
+  return Boolean(
+    user?.full_name || 
+    user?.instagram_url || 
+    user?.description || 
+    user?.interests
+  );
+};
+
+// Helper function to determine if user is existing (has any profile data)
+export const isExistingUser = (user: UserProfile): boolean => {
+  return Boolean(
+    user?.full_name || 
+    user?.instagram_url || 
+    user?.description || 
+    user?.interests
   );
 };
 

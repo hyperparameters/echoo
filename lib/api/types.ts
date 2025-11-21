@@ -49,6 +49,7 @@ export interface UserProfileUpdate {
 export interface UserLoginResponse {
   message: string;
   user: UserProfile;
+  is_new_user: boolean;
 }
 
 export interface ImageCreate {
