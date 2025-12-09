@@ -5,27 +5,40 @@ import type { EventResponse, EventRegistrationRequest, EventRegistrationResponse
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 // API Functions
+// API Functions
 export const eventsApi = {
     getEventList: async (): Promise<EventResponse[]> => {
-        return apiClient.get<EventResponse[]>('/api/v1/getEventList');
+        const response = await fetch('/api/v1/getEventList');
+        if (!response.ok) throw new Error('Failed to fetch events');
+        return response.json();
     },
 
     getEvent: async (eventId: number): Promise<EventResponse> => {
-        return apiClient.get<EventResponse>(`/api/v1/events/${eventId}`);
+        const response = await fetch(`/api/v1/events/${eventId}`);
+        if (!response.ok) throw new Error('Failed to fetch event');
+        return response.json();
     },
 
     registerEvent: async (eventId: number): Promise<EventRegistrationResponse> => {
-        return apiClient.post<EventRegistrationResponse>('/api/v1/register-event', {
-            event_id: eventId
+        const response = await fetch('/api/v1/register-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ event_id: eventId })
         });
+        if (!response.ok) throw new Error('Failed to register event');
+        return response.json();
     },
 
     getRegisteredEvents: async (): Promise<RegisteredEventResponse[]> => {
-        return apiClient.get<RegisteredEventResponse[]>('/api/v1/my-registered-events');
+        const response = await fetch('/api/v1/my-registered-events');
+        if (!response.ok) throw new Error('Failed to fetch registered events');
+        return response.json();
     },
 
     getEventMatchedImages: async (eventId: number): Promise<EventMatchedImageResponse[]> => {
-        return apiClient.get<EventMatchedImageResponse[]>(`/api/v1/get-event-matched-image-list?event_id=${eventId}`);
+        const response = await fetch(`/api/v1/get-event-matched-image-list?event_id=${eventId}`);
+        if (!response.ok) throw new Error('Failed to fetch matched images');
+        return response.json();
     },
 };
 
