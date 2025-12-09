@@ -261,6 +261,11 @@ export function AgentChat({
     }
   }, [userName, messages.length]);
 
+  // Get callback configuration from environment variables
+  const CALLBACK_TIMEOUT = parseInt(process.env.NEXT_PUBLIC_CALLBACK_TIMEOUT || '60000');
+  const POLL_INTERVAL = parseInt(process.env.NEXT_PUBLIC_CALLBACK_POLL_INTERVAL || '1000');
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+
   const sendMessageToAgent = async (content: string, files?: File[]) => {
     if (!content.trim() && (!files || files.length === 0)) return;
 
@@ -277,6 +282,9 @@ export function AgentChat({
     setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
 
+    // Generate a unique ID for this request
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     try {
       // Get Privy access token
       const authToken = await getAccessToken();
@@ -285,8 +293,7 @@ export function AgentChat({
         throw new Error("No authentication token available");
       }
 
-      // Call OpenServ Platform API
-      // The platform will route to our agent via webhook
+      // Call OpenServ Platform API with callback
       const payload = {
         messages: [
           {
@@ -299,52 +306,67 @@ export function AgentChat({
           auth_token: `Bearer ${authToken}`,
           session_id: sessionId,
           timestamp: new Date().toISOString(),
+          callback_url: `${APP_URL}/api/callback?id=${requestId}`,
         },
       };
 
-      // Call local Next.js API route which proxies to OpenServ
-      // This avoids CORS issues and keeps API keys server-side
-      const apiEndpoint = agentId 
-        ? '/api/agent'  // Use local API route for OpenServ Platform
-        : agentUrl;     // Fallback to direct URL for backward compatibility
-
-      const response = await fetch(apiEndpoint, {
-        method: "POST",
+      // Call OpenServ API through our proxy
+      const response = await fetch('/api/proxy', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
+          ...(openservApiKey && { 'x-openserv-key': openservApiKey })
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`
+        );
       }
 
-      const data = await response.json();
-
-      // Parse agent response
-      // OpenServ agent returns in format: { choices: [{ message: { content: "...", tool_calls: [...] } }] }
-      const agentMessage = data.choices?.[0]?.message;
-      const messageContent = agentMessage?.content || "I received your message.";
-      
-      // Check for tool calls (capability executions)
-      const toolCalls = agentMessage?.tool_calls || [];
-      let customResponse = null;
-      
-      if (toolCalls.length > 0) {
-        // Get the result from the last tool call
-        const lastToolCall = toolCalls[toolCalls.length - 1];
-        const toolResult = lastToolCall.function?.result;
+      // Start polling for the callback
+      const callbackData = await new Promise<any>((resolve, reject) => {
+        const startTime = Date.now();
         
-        if (toolResult) {
-          customResponse = parseCustomResponse({ output: toolResult });
-        }
-      }
+        const checkCallback = async () => {
+          try {
+            const checkResponse = await fetch(`/api/callback?id=${requestId}`);
+            if (checkResponse.ok) {
+              const data = await checkResponse.json();
+              if (data.output) {
+                resolve(data.output);
+                return;
+              }
+            }
+            
+            // Check if timed out
+            if (Date.now() - startTime > CALLBACK_TIMEOUT) {
+              reject(new Error(`Timeout after ${CALLBACK_TIMEOUT / 1000}s waiting for response`));
+              return;
+            }
+            
+            // Poll again after configured interval
+            setTimeout(checkCallback, POLL_INTERVAL);
+          } catch (err) {
+            reject(err);
+          }
+        };
+        
+        // Start polling
+        checkCallback();
+      });
 
+      // Process the callback data
+      const customResponse = parseCustomResponse({ output: callbackData });
+      
       const aiMessage: ChatMessage = {
         id: `ai_${Date.now()}`,
         type: "ai",
-        content: customResponse?.normalResponse || messageContent,
+        content: customResponse?.normalResponse || "I've processed your request.",
         timestamp: new Date(),
         suggestions: [],
         customComponent: customResponse?.customComponent,
@@ -353,14 +375,12 @@ export function AgentChat({
 
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
-      console.error("Error sending message to agent:", error);
+      console.error("Error in agent communication:", error);
 
-      // Fallback response
       const errorMessage: ChatMessage = {
         id: `error_${Date.now()}`,
         type: "ai",
-        content:
-          "I'm having trouble connecting right now. Please try again in a moment.",
+        content: `I'm having trouble processing your request: ${error instanceof Error ? error.message : 'Unknown error'}`,
         timestamp: new Date(),
         suggestions: ["Try again", "Check connection"],
       };

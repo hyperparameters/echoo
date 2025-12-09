@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { usePrivy } from "@privy-io/react-auth";
@@ -138,25 +139,48 @@ export default function SettingsPage() {
     }
     
     // Default fallback
-    return '/default-avatar.png';
+    return '/placeholder-user.jpg';
   };
+
+  const { theme, setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    // Load settings from localStorage
+    const savedSettings = localStorage.getItem('echoo-settings');
+    if (savedSettings) {
+      const parsed = JSON.parse(savedSettings);
+      setSettings(parsed);
+    }
+  }, []);
+
+  const [settings, setSettings] = useState({
+    notifications: true,
+    autoBackup: true,
+    personalization: true,
+    contentSuggestions: true,
+  });
+
+  // Save settings to localStorage when they change
+  useEffect(() => {
+    if (mounted) {
+      localStorage.setItem('echoo-settings', JSON.stringify(settings));
+    }
+  }, [settings, mounted]);
 
   const userInfo = {
     username: getDisplayName(),
     selfie_url: getProfilePictureUrl(),
     social_handle: getSocialHandle()
   };
-  const [settings, setSettings] = useState({
-    notifications: true,
-    darkMode: true,
-    autoBackup: true,
-    personalization: true,
-    contentSuggestions: true,
-  });
-
 
   const toggleSetting = (key: keyof typeof settings) => {
-    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+    if (key === 'darkMode') {
+      setTheme(theme === 'dark' ? 'light' : 'dark');
+    } else {
+      setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+    }
   };
 
   const settingSections = [
@@ -182,7 +206,7 @@ export default function SettingsPage() {
           icon: Moon,
           label: "Dark Mode",
           toggle: true,
-          value: settings.darkMode,
+          value: theme === 'dark',
           onToggle: () => toggleSetting("darkMode"),
         },
         { icon: Globe, label: "Language", hasChevron: true, value: "English" },
@@ -242,6 +266,16 @@ export default function SettingsPage() {
       ],
     },
   ];
+
+  if (!mounted) {
+    return (
+      <AppLayout>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-white">Loading...</div>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -310,9 +344,10 @@ export default function SettingsPage() {
                           <Switch
                             checked={item.value as boolean}
                             onCheckedChange={item.onToggle}
+                            className="cursor-pointer"
                           />
                         ) : item.hasChevron ? (
-                          <ChevronRight className="w-4 h-4 text-white/80" />
+                          <ChevronRight className="w-4 h-4 text-white/80 cursor-pointer" />
                         ) : null}
                       </div>
                     </div>
@@ -330,17 +365,17 @@ export default function SettingsPage() {
             <div className="space-y-3">
               <Button
                 variant="outline"
-                className="w-full justify-start border-border hover:bg-accent/50 bg-transparent"
+                className="w-full justify-start border-border hover:bg-accent/50 bg-transparent cursor-pointer"
                 onClick={handleLogout}
               >
-                <LogOut className="w-4 h-4 mr-3" />
+                <LogOut className="w-4 h-4 mr-3 cursor-pointer" />
                 Sign Out
               </Button>
               <Button
                 variant="outline"
-                className="w-full justify-start border-destructive text-destructive hover:bg-destructive/10 bg-transparent"
+                className="w-full justify-start border-destructive text-destructive hover:bg-destructive/10 bg-transparent cursor-pointer"
               >
-                <Trash2 className="w-4 h-4 mr-3" />
+                <Trash2 className="w-4 h-4 mr-3 cursor-pointer" />
                 Delete Account
               </Button>
             </div>
