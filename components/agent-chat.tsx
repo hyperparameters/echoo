@@ -217,11 +217,6 @@ export function AgentChat({
   const POLL_INTERVAL = parseInt(process.env.NEXT_PUBLIC_CALLBACK_POLL_INTERVAL || '1000');
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-  // Get callback configuration from environment variables
-  const CALLBACK_TIMEOUT = parseInt(process.env.NEXT_PUBLIC_CALLBACK_TIMEOUT || '60000');
-  const POLL_INTERVAL = parseInt(process.env.NEXT_PUBLIC_CALLBACK_POLL_INTERVAL || '1000');
-  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-
   const sendMessageToAgent = async (content: string, files?: File[]) => {
     if (!content.trim() && (!files || files.length === 0)) return;
 
@@ -237,9 +232,6 @@ export function AgentChat({
 
     setMessages((prev) => [...prev, userMessage]);
     setIsTyping(true);
-
-    // Generate a unique ID for this request
-    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
     // Generate a unique ID for this request
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -276,19 +268,11 @@ export function AgentChat({
           'Content-Type': 'application/json',
           ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
           ...(openservApiKey && { 'x-openserv-key': openservApiKey })
-          'Content-Type': 'application/json',
-          ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
-          ...(openservApiKey && { 'x-openserv-key': openservApiKey })
         },
-        body: JSON.stringify(payload)
         body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          `HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`
-        );
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
           `HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`
@@ -334,7 +318,6 @@ export function AgentChat({
         id: `ai_${Date.now()}`,
         type: "ai",
         content: customResponse?.normalResponse || "I've processed your request.",
-        content: customResponse?.normalResponse || "I've processed your request.",
         timestamp: new Date(),
         suggestions: [],
         customComponent: customResponse?.customComponent,
@@ -344,12 +327,10 @@ export function AgentChat({
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error in agent communication:", error);
-      console.error("Error in agent communication:", error);
 
       const errorMessage: ChatMessage = {
         id: `error_${Date.now()}`,
         type: "ai",
-        content: `I'm having trouble processing your request: ${error instanceof Error ? error.message : 'Unknown error'}`,
         content: `I'm having trouble processing your request: ${error instanceof Error ? error.message : 'Unknown error'}`,
         timestamp: new Date(),
         suggestions: ["Try again", "Check connection"],
