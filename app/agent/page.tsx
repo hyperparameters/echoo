@@ -18,7 +18,19 @@ export default function AgentPage() {
     }
   }, [authenticated]);
 
-  const userName = backendUser?.username || privyUser?.email?.address?.split('@')[0] || "User";
+  const getDisplayUsername = () => {
+    // If backend has a username and it's NOT a privy ID, use it
+    if (backendUser?.username && !backendUser.username.startsWith('did:privy:')) {
+      return backendUser.username;
+    }
+    // Fallback to email address from Privy
+    if (privyUser?.email?.address) {
+      return privyUser.email.address.split('@')[0];
+    }
+    // Fallback to "User"
+    return "User";
+  };
+  const userName = getDisplayUsername();
   const userId = backendUser?.id;
 
   // OpenServ Platform API configuration
@@ -29,9 +41,9 @@ export default function AgentPage() {
 
   return (
     <AppLayout>
-      <AgentChat 
-        agentUrl={agentUrl} 
-        userName={userName} 
+      <AgentChat
+        agentUrl={agentUrl}
+        userName={userName}
         user_id={userId}
         agentId={agentId}
         openservApiKey={openservApiKey}

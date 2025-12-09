@@ -6,12 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/logo";
 import { PromptInputBox } from "@/components/prompt-input-box";
-import { UserProfileComponent } from "@/components/chat/UserProfileComponent";
-import { InstagramPostsComponent } from "@/components/chat/InstagramPostsComponent";
-import { RegisteredEventsComponent } from "@/components/chat/RegisteredEventsComponent";
-import { EventImagesComponent } from "@/components/chat/EventImagesComponent";
-import { EventSummaryComponent } from "@/components/chat/EventSummaryComponent";
-import { ContentStrategyComponent } from "@/components/chat/ContentStrategyComponent";
+import { PostSuggestionsComponent } from "@/components/chat/PostSuggestionsComponent";
+import { TrendsComponent } from "@/components/chat/TrendsComponent";
 import { Plus, MessageSquare } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
 
@@ -30,7 +26,7 @@ interface ChatMessage {
   content: string;
   timestamp: Date;
   suggestions?: string[];
-  customComponent?: "user_profile" | "instagram_posts" | "registered_events" | "event_images" | "event_summary" | "content_strategy" | null;
+  customComponent?: "post_suggestions" | "trends" | null;
   customData?: any;
 }
 
@@ -75,61 +71,18 @@ export function AgentChat({
           output = output.foo;
         }
 
-        // Check for user profile response (structured JSON)
-        if (output?.success && output?.profile) {
+        // Check for post suggestions response
+        if (output?.post_suggestions && Array.isArray(output?.post_suggestions)) {
           return {
-            customComponent: "user_profile" as const,
+            customComponent: "post_suggestions" as const,
             customData: output,
           };
         }
 
-        // Check for user profile response (if output is the profile object itself)
-        if (output?.username || output?.full_name || output?.privy_id) {
+        // Check for trends response
+        if (output?.platform_trends || output?.personalized_trends) {
           return {
-            customComponent: "user_profile" as const,
-            customData: {
-              success: true,
-              profile: output,
-            },
-          };
-        }
-
-        // Check for Instagram posts response
-        if (output?.success && output?.posts && Array.isArray(output?.posts)) {
-          return {
-            customComponent: "instagram_posts" as const,
-            customData: output,
-          };
-        }
-
-        // Check for registered events response
-        if (output?.success && output?.events && Array.isArray(output?.events)) {
-          return {
-            customComponent: "registered_events" as const,
-            customData: output,
-          };
-        }
-
-        // Check for event images response
-        if (output?.success && output?.images && Array.isArray(output?.images)) {
-          return {
-            customComponent: "event_images" as const,
-            customData: output,
-          };
-        }
-
-        // Check for event summary response
-        if (output?.summary && output?.event_name) {
-          return {
-            customComponent: "event_summary" as const,
-            customData: output,
-          };
-        }
-
-        // Check for content strategy response
-        if (output?.strategy && output?.strategy?.overview) {
-          return {
-            customComponent: "content_strategy" as const,
+            customComponent: "trends" as const,
             customData: output,
           };
         }
@@ -251,15 +204,18 @@ export function AgentChat({
         content: `Hi ${userName}! I'm Echoo, your AI assistant for discovering and sharing event photos. I can help you find AI-matched photos from events you attended, create engaging captions, and build content strategies. What would you like to explore?`,
         timestamp: new Date(),
         suggestions: [
-          "Show my profile",
-          "What events am I registered for?",
-          "Show my event photos",
-          "Generate a caption for my latest photo",
+          "Suggest a post for my last event",
+          "What's trending on Instagram?",
         ],
       };
       setMessages([welcomeMessage]);
     }
   }, [userName, messages.length]);
+
+  // Get callback configuration from environment variables
+  const CALLBACK_TIMEOUT = parseInt(process.env.NEXT_PUBLIC_CALLBACK_TIMEOUT || '60000');
+  const POLL_INTERVAL = parseInt(process.env.NEXT_PUBLIC_CALLBACK_POLL_INTERVAL || '1000');
+  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
   // Get callback configuration from environment variables
   const CALLBACK_TIMEOUT = parseInt(process.env.NEXT_PUBLIC_CALLBACK_TIMEOUT || '60000');
@@ -285,29 +241,32 @@ export function AgentChat({
     // Generate a unique ID for this request
     const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
+    // Generate a unique ID for this request
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
     try {
       // Get Privy access token
       const authToken = await getAccessToken();
-      
+
       if (!authToken) {
         throw new Error("No authentication token available");
       }
 
-      // Call OpenServ Platform API with callback
+      // Prepare payload for OpenServ Agent SDK
       const payload = {
-        messages: [
-          {
-            role: "user",
-            content: content,
-          },
-        ],
+        agentId,
+        type: 'respond-chat-message',
+        messages: [...messages, userMessage].map(msg => ({
+          author: msg.type === 'user' ? 'user' : 'assistant',
+          message: msg.content
+        })),
         metadata: {
           user_id: user_id,
-          auth_token: `Bearer ${authToken}`,
+          auth_token: await getAccessToken(),
           session_id: sessionId,
           timestamp: new Date().toISOString(),
-          callback_url: `${APP_URL}/api/callback?id=${requestId}`,
-        },
+          callback_url: `${APP_URL}/api/callback?id=${requestId}`
+        }
       };
 
       // Call OpenServ API through our proxy
@@ -317,11 +276,19 @@ export function AgentChat({
           'Content-Type': 'application/json',
           ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
           ...(openservApiKey && { 'x-openserv-key': openservApiKey })
+          'Content-Type': 'application/json',
+          ...(authToken && { 'Authorization': `Bearer ${authToken}` }),
+          ...(openservApiKey && { 'x-openserv-key': openservApiKey })
         },
+        body: JSON.stringify(payload)
         body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(
+          `HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`
+        );
         const errorData = await response.json().catch(() => ({}));
         throw new Error(
           `HTTP error! status: ${response.status}, message: ${errorData.message || 'Unknown error'}`
@@ -331,7 +298,7 @@ export function AgentChat({
       // Start polling for the callback
       const callbackData = await new Promise<any>((resolve, reject) => {
         const startTime = Date.now();
-        
+
         const checkCallback = async () => {
           try {
             const checkResponse = await fetch(`/api/callback?id=${requestId}`);
@@ -342,30 +309,31 @@ export function AgentChat({
                 return;
               }
             }
-            
+
             // Check if timed out
             if (Date.now() - startTime > CALLBACK_TIMEOUT) {
               reject(new Error(`Timeout after ${CALLBACK_TIMEOUT / 1000}s waiting for response`));
               return;
             }
-            
+
             // Poll again after configured interval
             setTimeout(checkCallback, POLL_INTERVAL);
           } catch (err) {
             reject(err);
           }
         };
-        
+
         // Start polling
         checkCallback();
       });
 
       // Process the callback data
       const customResponse = parseCustomResponse({ output: callbackData });
-      
+
       const aiMessage: ChatMessage = {
         id: `ai_${Date.now()}`,
         type: "ai",
+        content: customResponse?.normalResponse || "I've processed your request.",
         content: customResponse?.normalResponse || "I've processed your request.",
         timestamp: new Date(),
         suggestions: [],
@@ -376,10 +344,12 @@ export function AgentChat({
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error in agent communication:", error);
+      console.error("Error in agent communication:", error);
 
       const errorMessage: ChatMessage = {
         id: `error_${Date.now()}`,
         type: "ai",
+        content: `I'm having trouble processing your request: ${error instanceof Error ? error.message : 'Unknown error'}`,
         content: `I'm having trouble processing your request: ${error instanceof Error ? error.message : 'Unknown error'}`,
         timestamp: new Date(),
         suggestions: ["Try again", "Check connection"],
@@ -454,21 +424,18 @@ export function AgentChat({
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex ${
-              message.type === "user" ? "justify-end" : "justify-start"
-            }`}
+            className={`flex ${message.type === "user" ? "justify-end" : "justify-start"
+              }`}
           >
             <div
-              className={`max-w-[80%] ${
-                message.type === "user" ? "order-2" : "order-1"
-              }`}
+              className={`max-w-[80%] ${message.type === "user" ? "order-2" : "order-1"
+                }`}
             >
               <Card
-                className={`${
-                  message.type === "user"
-                    ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-none"
-                    : "bg-gray-900/80 border-white/10 backdrop-blur-sm"
-                }`}
+                className={`${message.type === "user"
+                  ? "bg-gradient-to-r from-blue-600 to-purple-600 text-white border-none"
+                  : "bg-gray-900/80 border-white/10 backdrop-blur-sm"
+                  }`}
               >
                 <CardContent className="p-3">
                   <p className="text-sm whitespace-pre-line text-white">
@@ -480,23 +447,11 @@ export function AgentChat({
                     message.customComponent &&
                     message.customData && (
                       <div className="mt-4">
-                        {message.customComponent === "user_profile" && (
-                          <UserProfileComponent data={message.customData} />
+                        {message.customComponent === "post_suggestions" && (
+                          <PostSuggestionsComponent data={message.customData} />
                         )}
-                        {message.customComponent === "instagram_posts" && (
-                          <InstagramPostsComponent data={message.customData} />
-                        )}
-                        {message.customComponent === "registered_events" && (
-                          <RegisteredEventsComponent data={message.customData} />
-                        )}
-                        {message.customComponent === "event_images" && (
-                          <EventImagesComponent data={message.customData} />
-                        )}
-                        {message.customComponent === "event_summary" && (
-                          <EventSummaryComponent data={message.customData} />
-                        )}
-                        {message.customComponent === "content_strategy" && (
-                          <ContentStrategyComponent data={message.customData} />
+                        {message.customComponent === "trends" && (
+                          <TrendsComponent data={message.customData} />
                         )}
                       </div>
                     )}

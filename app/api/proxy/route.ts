@@ -61,21 +61,36 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
-  const targetUrl = process.env.NEXT_PUBLIC_OPENSERV_API_URL || 'https://api.openserv.ai';
+  const baseUrl = process.env.NEXT_PUBLIC_OPENSERV_API_URL || 'https://api.openserv.ai';
+  const webhookUrl = process.env.NEXT_PUBLIC_OPENSERV_WEBHOOK_URL;
   const authToken = req.headers.get('authorization');
   const openservKey = req.headers.get('x-openserv-key');
 
-  // Parse the request body to get the callback URL
+  // Parse the request body
   let body: any;
   let callbackUrl: string | null = null;
+  let agentId: string | null = null;
 
   try {
     body = await req.json();
     callbackUrl = body.metadata?.callback_url || null;
+    agentId = body.agentId || process.env.OPENSERV_AGENT_ID;
     console.log('Request body parsed, callback URL:', callbackUrl || 'none');
   } catch (e) {
     console.error('Error parsing request body:', e);
     return getErrorResponse(new Error('Invalid request body'), 400);
+  }
+
+  let targetUrl: string;
+  if (webhookUrl) {
+    targetUrl = webhookUrl;
+    console.log('Using Webhook URL for target:', targetUrl);
+  } else {
+    if (!agentId) {
+      return getErrorResponse(new Error('Agent ID is required when Webhook URL is not set'), 400);
+    }
+    targetUrl = `${baseUrl}/v1/agents/${agentId}/chat`;
+    console.log('Using Platform API URL for target:', targetUrl);
   }
 
   // Mock response removed as per user request
@@ -94,7 +109,7 @@ export async function POST(req: NextRequest) {
       ...(openservKey && { 'x-openserv-key': openservKey }),
     };
 
-    console.log('Request headers:', headers);
+    console.log('Request headers:', JSON.stringify(headers, null, 2));
     console.log('Request body:', JSON.stringify(body, null, 2));
 
     const response = await fetchWithTimeout(
