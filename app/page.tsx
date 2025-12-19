@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
-import { Loader2, Mail, Twitter, LogIn } from "lucide-react";
+import { Loader2, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Ripple } from "@/components/magicui/ripple";
 import Image from "next/image";
@@ -49,14 +49,6 @@ export default function OnboardingPage() {
       await login();
     } catch (error) {
       console.error('Login failed:', error);
-    }
-  };
-
-  const handleEmailLogin = async () => {
-    try {
-      await handleOAuthLogin('google');
-    } catch (error) {
-      console.error('Email login failed:', error);
     }
   };
 
@@ -193,13 +185,13 @@ export default function OnboardingPage() {
       </div>
 
       {/* Logo */}
-      <div className="absolute top-20 left-1/2 transform -translate-x-1/2 z-10">
-        <div className="w-24 h-24 flex items-center justify-center">
+      <div className="absolute top-12 left-1/2 transform -translate-x-1/2 z-10">
+        <div className="w-40 h-40 flex items-center justify-center">
           <Image
             src="/echoo-logo-sm.png"
             alt="echoo logo"
-            width={96}
-            height={96}
+            width={160}
+            height={160}
             className="w-full h-full object-contain opacity-80"
             priority
           />
@@ -208,7 +200,7 @@ export default function OnboardingPage() {
 
       {/* Main Content */}
       <div className="w-full max-w-sm mx-auto relative z-10">
-        <div className="bg-background/80 backdrop-blur-sm p-8 rounded-2xl shadow-2xl border border-border/50">
+        <div className="bg-background/30 backdrop-blur-md p-8 rounded-2xl shadow-2xl border border-white/20">
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold mb-2 text-white">
               Welcome to Echo
@@ -218,29 +210,11 @@ export default function OnboardingPage() {
 
           <div className="space-y-4">
             <Button
-              onClick={() => handleOAuthLogin('google')}
-              className="w-full bg-white/10 hover:bg-white/20 text-white border border-white/30 hover:border-white/50 font-medium transition-all duration-200 transform hover:-translate-y-0.5"
-              variant="outline"
-            >
-              <LogIn className="w-4 h-4 mr-2" />
-              Continue with Google
-            </Button>
-
-            <Button
               onClick={() => handleOAuthLogin('twitter')}
               className="w-full bg-brand-primary hover:bg-orange-600 text-white font-medium transition-all duration-200 transform hover:-translate-y-0.5"
             >
-              <Twitter className="w-4 h-4 mr-2" />
-              Continue with Twitter
-            </Button>
-
-            <Button
-              onClick={handleEmailLogin}
-              className="w-full bg-transparent hover:bg-white/10 text-white border border-white/30 hover:border-white/50 font-medium transition-all duration-200 transform hover:-translate-y-0.5"
-              variant="outline"
-            >
-              <Mail className="w-4 h-4 mr-2" />
-              Continue with Email
+              <LogIn className="w-4 h-4 mr-2" />
+              SignUp/Signin
             </Button>
           </div>
         </div>
