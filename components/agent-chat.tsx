@@ -8,8 +8,11 @@ import { Logo } from "@/components/logo";
 import { PromptInputBox } from "@/components/prompt-input-box";
 import { PostSuggestionsComponent } from "@/components/chat/PostSuggestionsComponent";
 import { TrendsComponent } from "@/components/chat/TrendsComponent";
-import { Plus, MessageSquare } from "lucide-react";
+import { EventSelectionComponent } from "@/components/chat/EventSelectionComponent";
+import { Plus, MessageSquare, Calendar } from "lucide-react";
 import { usePrivy } from "@privy-io/react-auth";
+import { eventsApi } from "@/lib/api/events";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 interface AgentChatProps {
   agentUrl: string; // Now expects OpenServ Platform API URL
@@ -26,7 +29,7 @@ interface ChatMessage {
   content: string;
   timestamp: Date;
   suggestions?: string[];
-  customComponent?: "post_suggestions" | "trends" | null;
+  customComponent?: "post_suggestions" | "trends" | "event_selection" | null;
   customData?: any;
 }
 
@@ -42,12 +45,53 @@ export function AgentChat({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isTyping, setIsTyping] = useState(false);
   const [sessionId, setSessionId] = useState<string>("");
+  const [selectedEventId, setSelectedEventId] = useState<string>("");
+  const [registeredEvents, setRegisteredEvents] = useState<any[]>([]);
+  const [isLoadingEvents, setIsLoadingEvents] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // localStorage keys
   const SESSION_KEY = "echoo_chat_session_id";
   const MESSAGES_KEY = "echoo_chat_messages";
+  const SELECTED_EVENT_KEY = "echoo_selected_event_id";
+
+  // Fetch registered events on mount
+  useEffect(() => {
+    const fetchEvents = async () => {
+      if (!user_id) return;
+      
+      try {
+        setIsLoadingEvents(true);
+        const events = await eventsApi.getRegisteredEvents();
+        // Map events to a consistent structure (RegisteredEventResponse uses event_id, event_name)
+        const mappedEvents = events.map((e: any) => ({
+          id: e.event_id || e.id,
+          name: e.event_name || e.name,
+          description: e.event_description || e.description,
+          location: e.event_location || e.location,
+          start_date: e.event_date || e.start_date,
+          end_date: e.end_date,
+          category: e.event_category || e.category
+        })).filter((e: any) => e.id != null);
+        
+        setRegisteredEvents(mappedEvents);
+        
+        // Restore selected event from localStorage
+        const savedEventId = localStorage.getItem(SELECTED_EVENT_KEY);
+        if (savedEventId && mappedEvents.some((e: any) => String(e.id) === savedEventId)) {
+          setSelectedEventId(savedEventId);
+        }
+      } catch (error) {
+        console.error("Error fetching registered events:", error);
+        setRegisteredEvents([]);
+      } finally {
+        setIsLoadingEvents(false);
+      }
+    };
+
+    fetchEvents();
+  }, [user_id]);
 
   // Helper function to detect and parse custom JSON responses
   const parseCustomResponse = (response: any) => {
@@ -83,6 +127,14 @@ export function AgentChat({
         if (output?.platform_trends || output?.personalized_trends) {
           return {
             customComponent: "trends" as const,
+            customData: output,
+          };
+        }
+
+        // Check for event selection response
+        if (output?.events_for_selection && Array.isArray(output?.events_for_selection)) {
+          return {
+            customComponent: "event_selection" as const,
             customData: output,
           };
         }
@@ -217,8 +269,20 @@ export function AgentChat({
   const POLL_INTERVAL = parseInt(process.env.NEXT_PUBLIC_CALLBACK_POLL_INTERVAL || '1000');
   const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-  const sendMessageToAgent = async (content: string, files?: File[]) => {
+  const sendMessageToAgent = async (content: string, files?: File[], extraParams?: { eventId?: string }) => {
     if (!content.trim() && (!files || files.length === 0)) return;
+
+    // Auto-detect if this is a post suggestion request and use selected event
+    const isPostSuggestion = content.toLowerCase().includes("suggest a post") || 
+                            content.toLowerCase().includes("create a post") ||
+                            content.toLowerCase().includes("generate post");
+    
+    // Use selected event if it's a post suggestion and no eventId is explicitly provided
+    const eventIdToUse = extraParams?.eventId || (isPostSuggestion && selectedEventId ? selectedEventId : undefined);
+    
+    if (eventIdToUse) {
+      console.log('[AgentChat] Using event context:', eventIdToUse);
+    }
 
     const userMessage: ChatMessage = {
       id: `user_${Date.now()}`,
@@ -257,8 +321,17 @@ export function AgentChat({
           auth_token: await getAccessToken(),
           session_id: sessionId,
           timestamp: new Date().toISOString(),
-          callback_url: `${APP_URL}/api/callback?id=${requestId}`
-        }
+          callback_url: `${APP_URL}/api/callback?id=${requestId}`,
+          ...(eventIdToUse && { eventId: eventIdToUse })
+        },
+        // Pass eventId as args for the capability
+        ...(eventIdToUse && { 
+          args: { 
+            eventId: eventIdToUse,
+            userId: user_id?.toString() || "1",
+            chatInput: content
+          } 
+        })
       };
 
       // Call OpenServ API through our proxy
@@ -342,8 +415,47 @@ export function AgentChat({
     }
   };
 
-  const handleSuggestionClick = (suggestion: string) => {
-    sendMessageToAgent(suggestion);
+  const handleSuggestionClick = async (suggestion: string) => {
+    // If it's the "Suggest a post for my last event" suggestion, check if event is selected
+    if (suggestion === "Suggest a post for my last event" || suggestion.toLowerCase().includes("suggest a post")) {
+      if (!selectedEventId) {
+        // No event selected, show error message
+        const errorMessage: ChatMessage = {
+          id: `error_${Date.now()}`,
+          type: "ai",
+          content: "Please select an event from the dropdown above before generating post suggestions.",
+          timestamp: new Date(),
+          suggestions: [],
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+        return;
+      }
+      
+      // Event is selected, send directly to agent with eventId
+      sendMessageToAgent(suggestion, undefined, { eventId: selectedEventId });
+    } else {
+      // For other suggestions, send directly to agent
+      sendMessageToAgent(suggestion);
+    }
+  };
+
+  const handleEventSelect = (eventId: string) => {
+    console.log('[AgentChat] Event selected:', eventId);
+    setSelectedEventId(eventId);
+    localStorage.setItem(SELECTED_EVENT_KEY, eventId);
+    
+    // Show confirmation message
+    const selectedEvent = registeredEvents.find((e: any) => String(e.id) === eventId);
+    if (selectedEvent) {
+      const confirmationMessage: ChatMessage = {
+        id: `event_selected_${Date.now()}`,
+        type: "ai",
+        content: `✅ Event context set to: **${selectedEvent.name}**\n\nAll post suggestions will now use photos and context from this event.`,
+        timestamp: new Date(),
+        suggestions: [],
+      };
+      setMessages((prev) => [...prev, confirmationMessage]);
+    }
   };
 
   const startNewChat = () => {
@@ -375,13 +487,46 @@ export function AgentChat({
             <div className="w-10 h-10 rounded-full bg-gradient-to-r from-brand-primary/30 to-brand-accent/30 flex items-center justify-center">
               <Logo variant="icon" width={56} height={56} className="text-white" />
             </div>
-            <div>
-              <h1 className="text-xl font-bold text-white">
-                Echoo AI Assistant
-              </h1>
+            <div className="flex items-center space-x-4">
+              <div>
+                <h1 className="text-xl font-bold text-white">
+                  Echoo AI Assistant
+                </h1>
+                <div className="flex items-center space-x-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm text-gray-300">Online</span>
+                </div>
+              </div>
+              {/* Event Selection Dropdown */}
               <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-300">Online</span>
+                <Calendar className="w-4 h-4 text-gray-400" />
+                <Select
+                  value={selectedEventId}
+                  onValueChange={handleEventSelect}
+                  disabled={isLoadingEvents || registeredEvents.length === 0}
+                >
+                  <SelectTrigger className="w-[200px] border-white/20 bg-black/50 text-white hover:bg-white/10">
+                    <SelectValue placeholder={isLoadingEvents ? "Loading events..." : registeredEvents.length === 0 ? "No events" : "Select event"} />
+                  </SelectTrigger>
+                  <SelectContent className="bg-gray-900 border-white/20 text-white">
+                    {registeredEvents
+                      .filter((event: any) => event && event.id != null)
+                      .map((event: any) => (
+                        <SelectItem 
+                          key={event.id} 
+                          value={String(event.id)}
+                          className="text-white hover:bg-white/10 focus:bg-white/10"
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">{event.name || 'Unnamed Event'}</span>
+                            {event.location && (
+                              <span className="text-xs text-gray-400">{event.location}</span>
+                            )}
+                          </div>
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
             </div>
           </div>
@@ -433,6 +578,16 @@ export function AgentChat({
                         )}
                         {message.customComponent === "trends" && (
                           <TrendsComponent data={message.customData} />
+                        )}
+                        {message.customComponent === "event_selection" && (
+                          <EventSelectionComponent 
+                            data={message.customData} 
+                            onEventSelect={(eventId) => {
+                              // Send a message with the selected eventId
+                              sendMessageToAgent(`Suggest a post for event ${eventId}`, undefined, { eventId });
+                            }}
+                            isLoading={isTyping}
+                          />
                         )}
                       </div>
                     )}
