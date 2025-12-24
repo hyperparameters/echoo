@@ -16,7 +16,7 @@ export async function GET(request: Request) {
             );
         }
         
-        const response = await fetch(`${API_BASE_URL}/api/v1/events/my-registered-events`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/my-registered-events`, {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': authHeader,

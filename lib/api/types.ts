@@ -137,21 +137,21 @@ export interface EventRegistrationResponse {
 
 export interface RegisteredEventResponse {
   registration_id: number;
-  request_id: number;
-  request_key: string;
-  redirect_url: string;
+  request_id?: string | null;
+  request_key?: string | null;
+  redirect_url?: string | null;
   registration_created_at: string;
   event_id: number;
   event_name: string;
-  event_description: string;
-  event_cover_image_url: string;
+  event_description?: string | null;
+  event_cover_image_url?: string | null;
   event_cover_image_height?: number | null;
   event_cover_image_width?: number | null;
   event_location?: string | null;
   event_category?: string | null;
-  event_date: string;
-  fotoowl_event_id: number;
-  fotoowl_event_key: string;
+  event_date?: string | null;
+  fotoowl_event_id?: number | null;
+  fotoowl_event_key?: string | null;
 }
 
 export interface HTTPValidationError {

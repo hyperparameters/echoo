@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -12,16 +12,25 @@ import {
   Heart,
   MessageCircle,
   Share2,
+  Upload,
+  Loader2,
 } from "lucide-react";
 import { AppLayout } from "@/components/app-layout";
 import { PhotoGallery, Photo } from "@/components/photo-gallery";
 import { useEventMatchedImages, useEvent } from "@/lib/api/events";
 import { EventMatchedImageResponse } from "@/lib/api/types";
+import { usePrivy } from "@privy-io/react-auth";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export default function EventGalleryPage() {
   const params = useParams();
   const router = useRouter();
   const eventId = parseInt(params.eventId as string);
+  const { user } = usePrivy();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const { data: event, isLoading: isLoadingEvent } = useEvent(eventId);
   const {
@@ -58,6 +67,63 @@ export default function EventGalleryPage() {
     } else {
       // Fallback: copy to clipboard
       navigator.clipboard.writeText(window.location.href);
+    }
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    if (!user?.id) {
+      toast.error("Please log in to upload photos");
+      return;
+    }
+
+    setIsUploading(true);
+    const uploadPromises = Array.from(files).map(async (file) => {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("event_id", eventId.toString());
+      formData.append("user_id", user.id);
+
+      try {
+        const response = await fetch("/api/v1/upload-event-image", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const error = await response.json().catch(() => ({}));
+          throw new Error(error.error || "Upload failed");
+        }
+
+        return await response.json();
+      } catch (error: any) {
+        console.error(`Failed to upload ${file.name}:`, error);
+        toast.error(`Failed to upload ${file.name}: ${error.message}`);
+        throw error;
+      }
+    });
+
+    try {
+      await Promise.all(uploadPromises);
+      toast.success(`Successfully uploaded ${files.length} photo(s)`);
+      
+      // Refresh gallery images
+      queryClient.invalidateQueries({
+        queryKey: ["events", eventId, "matched-images"],
+      });
+    } catch (error) {
+      // Errors already handled in individual uploads
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
     }
   };
 
@@ -197,6 +263,32 @@ export default function EventGalleryPage() {
           <h2 className="text-lg font-semibold text-white">
             Gallery ({photos.length} photos)
           </h2>
+          <Button
+            onClick={handleUploadClick}
+            disabled={isUploading}
+            variant="gradient"
+            size="sm"
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Uploading...
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4 mr-2" />
+                Upload Photos
+              </>
+            )}
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*"
+            onChange={handleFileChange}
+            className="hidden"
+          />
         </div>
 
         {/* Photo Gallery */}

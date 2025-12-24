@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { useRegisterEvent } from "@/lib/api/events";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface JoinEventDialogProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ interface JoinEventDialogProps {
   eventId: number;
   eventName: string;
   onJoinStart?: () => void;
+  onJoinSuccess?: () => void;
 }
 
 export function JoinEventDialog({
@@ -30,8 +32,10 @@ export function JoinEventDialog({
   eventId,
   eventName,
   onJoinStart,
+  onJoinSuccess,
 }: JoinEventDialogProps) {
   const [isConfirming, setIsConfirming] = useState(false);
+  const queryClient = useQueryClient();
   const registerEventMutation = useRegisterEvent();
 
   const handleJoinEvent = async () => {
@@ -39,15 +43,19 @@ export function JoinEventDialog({
     onJoinStart?.(); // Notify parent component that join process has started
     try {
       await registerEventMutation.mutateAsync(eventId);
+      
       toast.success("Successfully joined the event!", {
         description:
-          "Your selfie will be used to find your photos from this event.",
+          "You can now view the gallery and your photos will be matched automatically.",
       });
+      
+      onJoinSuccess?.(); // Notify parent of successful join
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to join event:", error);
+      const errorMessage = error?.message || "Please try again later.";
       toast.error("Failed to join event", {
-        description: "Please try again later.",
+        description: errorMessage,
       });
     } finally {
       setIsConfirming(false);

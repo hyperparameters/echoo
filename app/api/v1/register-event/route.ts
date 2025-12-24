@@ -26,7 +26,7 @@ export async function POST(request: Request) {
             );
         }
 
-        const response = await fetch(`${API_BASE_URL}/api/v1/events/register-event`, {
+        const response = await fetch(`${API_BASE_URL}/api/v1/register-event`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

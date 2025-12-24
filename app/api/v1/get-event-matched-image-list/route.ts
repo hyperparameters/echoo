@@ -29,7 +29,7 @@ export async function GET(request: Request) {
         }
 
         const response = await fetch(
-            `${API_BASE_URL}/api/v1/events/get-event-matched-image-list?event_id=${event_id}&page=${page}&page_size=${page_size}`,
+            `${API_BASE_URL}/api/v1/get-event-matched-image-list?event_id=${event_id}&page=${page}&page_size=${page_size}`,
             {
                 headers: {
                     'Content-Type': 'application/json',
