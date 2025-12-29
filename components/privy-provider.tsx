@@ -3,13 +3,9 @@
 import { useEffect } from 'react';
 import { PrivyProvider as BasePrivyProvider, usePrivy } from '@privy-io/react-auth';
 import { WagmiProvider } from 'wagmi';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { config } from '@/lib/privy-config';
 import { setPrivyAccessTokenGetter } from '@/lib/api/client';
 import { authApi } from '@/lib/api/auth';
-
-// Create a client for React Query
-const queryClient = new QueryClient();
 
 /**
  * Internal component to connect Privy authentication with our API client
@@ -62,19 +58,19 @@ export function PrivyProvider({ children }: { children: React.ReactNode }) {
           logo: '/echoo-logo-sm.png',
         },
         embeddedWallets: {
-          createOnLogin: 'users-without-wallets',
+          ethereum: {
+            createOnLogin: 'users-without-wallets',
+          },
         },
         // Default chain for embedded wallets
         defaultChain: config.chains[0],
       }}
     >
-      <QueryClientProvider client={queryClient}>
-        <WagmiProvider config={config}>
-          <PrivyAuthConnector>
-            {children}
-          </PrivyAuthConnector>
-        </WagmiProvider>
-      </QueryClientProvider>
+      <WagmiProvider config={config}>
+        <PrivyAuthConnector>
+          {children}
+        </PrivyAuthConnector>
+      </WagmiProvider>
     </BasePrivyProvider>
   );
 }

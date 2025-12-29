@@ -73,10 +73,13 @@ export const useRegisterEvent = () => {
     return useMutation({
         mutationFn: (eventId: number) => eventsApi.registerEvent(eventId),
         onSuccess: () => {
-            // Invalidate and refetch events list to update registered status
+            // Invalidate and immediately refetch events list to update registered status
             queryClient.invalidateQueries({ queryKey: ['events', 'list'] });
-            // Also invalidate registered events to update the count and My Events tab
+            queryClient.refetchQueries({ queryKey: ['events', 'list'] });
+            
+            // Also invalidate and immediately refetch registered events to update the count and My Events tab
             queryClient.invalidateQueries({ queryKey: ['events', 'registered'] });
+            queryClient.refetchQueries({ queryKey: ['events', 'registered'] });
         },
     });
 };

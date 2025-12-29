@@ -63,7 +63,7 @@ export function AgentChat({
       
       try {
         setIsLoadingEvents(true);
-        const events = await eventsApi.getRegisteredEvents(getAccessToken);
+        const events = await eventsApi.getRegisteredEvents();
         // Map events to a consistent structure (RegisteredEventResponse uses event_id, event_name)
         const mappedEvents = events.map((e: any) => ({
           id: e.event_id || e.id,

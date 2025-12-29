@@ -9,8 +9,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Instagram, Mail, Loader2, User } from "lucide-react";
-import { useProfile } from "@/stores/authStore";
-import type { UserProfile, UserDetailsForm } from "@/lib/api";
+import { useMutation } from "@tanstack/react-query";
+import { authApi } from "@/lib/api/auth";
+import type { UserProfile, UserDetailsForm, UserProfileUpdate } from "@/lib/api";
 
 interface DetailsComponentProps {
   user: UserProfile;
@@ -34,7 +35,9 @@ export function DetailsComponent({
       : [],
   });
 
-  const { updateProfile, isLoading, error } = useProfile();
+  const { mutateAsync: updateProfile, isPending: isLoading, error } = useMutation({
+    mutationFn: (data: UserProfileUpdate) => authApi.updateProfile(data),
+  });
 
   // Available interests (will be moved to API/config later)
   const availableInterests = [
@@ -244,7 +247,7 @@ export function DetailsComponent({
         {error && (
           <Alert className="border-destructive/50 bg-destructive/10">
             <AlertDescription className="text-destructive">
-              {error || "Failed to update profile. Please try again."}
+              {error instanceof Error ? error.message : "Failed to update profile. Please try again."}
             </AlertDescription>
           </Alert>
         )}
