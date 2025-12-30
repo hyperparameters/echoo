@@ -42,17 +42,24 @@ export default function EventGalleryPage() {
 
   /**
    * Convert event matched images to Photo objects for react-photo-album
-   * Uses actual image dimensions from API
+   * Uses actual image dimensions from API, with fallback defaults
    * @see https://github.com/igordanchenko/react-photo-album#photo-object
    */
   const photos: Photo[] =
-    eventImages?.map((image) => ({
-      src: image.image_url,
-      width: image.width,
-      height: image.height,
-      alt: image.name,
-      key: image?.id?.toString() || image.name,
-    })) || [];
+    eventImages?.map((image) => {
+      // Use actual dimensions from API if available, otherwise use defaults
+      // Default to 4:3 aspect ratio (common for photos)
+      const width = image.width && !isNaN(image.width) ? image.width : 800;
+      const height = image.height && !isNaN(image.height) ? image.height : 600;
+      
+      return {
+        src: image.image_url,
+        width: width,
+        height: height,
+        alt: image.name,
+        key: image?.id?.toString() || image.name,
+      };
+    }) || [];
 
   const handleBack = () => {
     router.back();

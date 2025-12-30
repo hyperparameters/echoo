@@ -207,14 +207,18 @@ export function PhotoGallery({
               }
             };
 
+            // Ensure width and height are valid numbers (not NaN)
+            const imgWidth = width && !isNaN(width) ? width : undefined;
+            const imgHeight = height && !isNaN(height) ? height : undefined;
+
             return (
               <div className="group cursor-pointer" onClick={handleClick}>
                 <div className="relative overflow-hidden">
                   <img
                     src={photo.src}
                     alt={photo.alt || ""}
-                    width={width}
-                    height={height}
+                    {...(imgWidth && { width: imgWidth })}
+                    {...(imgHeight && { height: imgHeight })}
                     loading="lazy"
                     decoding="async"
                     style={{
