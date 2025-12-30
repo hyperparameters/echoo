@@ -15,33 +15,28 @@ export async function POST(request: Request) {
     const body = await request.json();
     let { id, output } = body;
 
-    // If ID is not in body, try to get it from URL
-    if (!id) {
-      const { searchParams } = new URL(request.url);
-      id = searchParams.get('id');
-    }
-
-    if (!id) {
-      console.error('❌ Callback missing ID');
+      if (!id) {
+      console.error('❌ Callback missing ID:', body);
       return NextResponse.json(
         { error: 'Missing id in callback' },
         { status: 400, headers: corsHeaders }
       );
     }
 
+    console.log('📥 Callback received:', { id, output: typeof output });
+
     // Store callback data
-    callbacks.set(id, output || { status: 'received', timestamp: new Date().toISOString() });
+    callbacks.set(id, output);
 
     // Auto-cleanup after 5 minutes
     setTimeout(() => {
       callbacks.delete(id);
     }, 5 * 60 * 1000);
 
-    return NextResponse.json({
-      ok: true,
+    return NextResponse.json({ 
+      ok: true, 
       id,
-      message: 'Callback received',
-      timestamp: new Date().toISOString()
+      message: 'Callback received'
     }, {
       status: 200,
       headers: corsHeaders
@@ -58,55 +53,29 @@ export async function POST(request: Request) {
   }
 }
 
-// Helper to log all stored callback IDs
-function logStoredCallbackIds() {
-  const ids = Array.from(callbacks.keys());
-  return ids;
-}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const id = searchParams.get('id');
 
   if (!id) {
-    console.error('❌ Missing ID in callback GET request');
-    return NextResponse.json(
-      {
-        error: 'Missing id parameter',
-        availableCallbacks: logStoredCallbackIds()
-      },
-      { status: 400, headers: corsHeaders }
-    );
+    return NextResponse.json({ error: 'Missing id parameter' }, { status: 400, headers: corsHeaders });
   }
-
-  logStoredCallbackIds();
 
   const output = callbacks.get(id);
 
   if (output) {
-    return NextResponse.json({
-      ok: true,
-      id,
-      data: output,
-      timestamp: new Date().toISOString(),
-      storedAt: output.timestamp || 'unknown'
-    }, {
+    // Delete after retrieving (prevent multiple reads) - match demo app pattern
+    callbacks.delete(id);
+    return NextResponse.json({ ok: true, output }, {
       status: 200,
       headers: corsHeaders
     });
   }
 
-  // If we get here, no callback data was found
-  return NextResponse.json(
-    {
-      ok: false,
-      message: 'Callback not found yet',
-      id,
-      timestamp: new Date().toISOString()
-    },
-    {
-      status: 404,
-      headers: corsHeaders
-    }
-  );
+  return NextResponse.json({ ok: false, message: 'Callback not found yet' }, { status: 404, headers: corsHeaders });
+}
+
+export async function OPTIONS() {
+  return new NextResponse(null, { headers: corsHeaders });
 }

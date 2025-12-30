@@ -163,6 +163,46 @@ export function AgentChat({
           }
         }
 
+        // Check if output is a string directly
+        if (output && typeof output === "string") {
+          try {
+            // Try parsing as JSON string
+            const parsed = JSON.parse(output);
+            if (parsed?.response) {
+              return {
+                customComponent: null,
+                customData: null,
+                normalResponse: parsed.response,
+              };
+            }
+          } catch {
+            // Not JSON, return as-is
+            return {
+              customComponent: null,
+              customData: null,
+              normalResponse: output,
+            };
+          }
+        }
+
+        // Check for direct response field
+        if (output?.response && typeof output.response === "string") {
+          return {
+            customComponent: null,
+            customData: null,
+            normalResponse: output.response,
+          };
+        }
+
+        // Check for message field
+        if (output?.message && typeof output.message === "string") {
+          return {
+            customComponent: null,
+            customData: null,
+            normalResponse: output.message,
+          };
+        }
+
         if (response?.response && typeof response?.response === "string") {
           return null;
         }
@@ -385,18 +425,37 @@ export function AgentChat({
       });
 
       // Process the callback data
+      console.log('[AgentChat] Raw callback data:', callbackData);
       const customResponse = parseCustomResponse({ output: callbackData });
+      console.log('[AgentChat] Parsed response:', customResponse);
+
+      // Determine what to display
+      let displayContent: string;
+      if (customResponse?.normalResponse) {
+        displayContent = customResponse.normalResponse;
+      } else if (customResponse?.customComponent) {
+        // Custom component will handle display
+        displayContent = "Here's your response:";
+      } else if (typeof callbackData === 'string') {
+        displayContent = callbackData;
+      } else if (callbackData && typeof callbackData === 'object') {
+        // Try to extract a meaningful message from the object
+        displayContent = callbackData.message || callbackData.response || JSON.stringify(callbackData, null, 2);
+      } else {
+        displayContent = "I've processed your request.";
+      }
 
       const aiMessage: ChatMessage = {
         id: `ai_${Date.now()}`,
         type: "ai",
-        content: customResponse?.normalResponse || "I've processed your request.",
+        content: displayContent,
         timestamp: new Date(),
         suggestions: [],
         customComponent: customResponse?.customComponent,
         customData: customResponse?.customData,
       };
 
+      console.log('[AgentChat] Adding message:', aiMessage);
       setMessages((prev) => [...prev, aiMessage]);
     } catch (error) {
       console.error("Error in agent communication:", error);

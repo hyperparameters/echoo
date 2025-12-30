@@ -38,22 +38,9 @@ async function fetchWithTimeout(url: string, options: any = {}, timeout = 15000)
   }
 }
 
-// Forward response to callback URL
-async function forwardToCallback(callbackUrl: string, data: any) {
-  try {
-    console.log(`📤 Forwarding to callback: ${callbackUrl}`);
-    const response = await fetch(callbackUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ output: data }),
-    });
-    if (!response.ok) {
-      console.error(`Callback failed with status ${response.status}`);
-    }
-  } catch (error) {
-    console.error('Error in callback forwarding:', error);
-  }
-}
+// Note: We don't forward webhook responses as callbacks.
+// The OpenServ platform will send the final result via the callback URL
+// configured in the workflow (REST API agent node).
 
 // Handle OPTIONS method for CORS preflight
 export async function OPTIONS() {
@@ -131,9 +118,8 @@ export async function POST(req: NextRequest) {
       const text = await response.text();
       console.log('Non-JSON response:', text);
 
-      if (callbackUrl) {
-        await forwardToCallback(callbackUrl, { text });
-      }
+      // Don't forward webhook response as callback - OpenServ platform will send callback separately
+      // The webhook response is just an acknowledgment, not the final result
 
       return new NextResponse(text, {
         status: response.status,
@@ -145,10 +131,9 @@ export async function POST(req: NextRequest) {
     // For JSON responses
     const responseData = await response.json();
 
-    // Forward to callback if specified
-    if (callbackUrl) {
-      await forwardToCallback(callbackUrl, responseData);
-    }
+    // Don't forward webhook response as callback - OpenServ platform will send callback separately
+    // The webhook response is just an acknowledgment, not the final result
+    // The actual agent result will come via the callback URL configured in the workflow
 
     return NextResponse.json(responseData, {
       status: response.status,
