@@ -41,18 +41,39 @@ export class UploadService {
     onProgress?: (progress: UploadProgress) => void,
     imageType: string = 'image'
   ): Promise<FilecoinUploadResponse> {
+    // Check URL first and log clearly
+    console.log('🔍 Checking Filecoin upload configuration...', {
+      apiUrl: this.apiUrl || 'NOT SET',
+      envCheck: {
+        NEXT_PUBLIC_FILECOIN_UPLOAD_API_URL: process.env.NEXT_PUBLIC_FILECOIN_UPLOAD_API_URL || 'NOT SET',
+        FILECOIN_UPLOAD_API_URL: process.env.FILECOIN_UPLOAD_API_URL || 'NOT SET'
+      }
+    });
+
     if (!this.apiUrl) {
-      throw new Error('FILECOIN_UPLOAD_API_URL is not configured');
+      const errorMsg = 'FILECOIN_UPLOAD_API_URL is not configured. Please set NEXT_PUBLIC_FILECOIN_UPLOAD_API_URL in your .env.local file and restart the dev server.';
+      console.error('❌', errorMsg);
+      throw new Error(errorMsg);
     }
 
-    // Extract image dimensions before upload
+    // Log the URL being used (without exposing full credentials)
+    console.log('📤 Uploading to Filecoin:', {
+      url: this.apiUrl,
+      fileName: file.name,
+      fileSize: file.size,
+      userId,
+      imageType
+    });
+
+    // Extract image dimensions before upload (non-blocking)
     let imageDimensions: { width: number; height: number } | null = null;
     try {
       if (file.type.startsWith('image/')) {
         imageDimensions = await this.getImageDimensions(file);
       }
     } catch (error) {
-      console.warn('Failed to extract image dimensions:', error);
+      // Dimension extraction is optional - continue without it
+      console.warn('⚠️ Failed to extract image dimensions (continuing anyway):', error);
     }
 
     return new Promise((resolve, reject) => {
@@ -74,30 +95,88 @@ export class UploadService {
 
       // Set up response handlers
       xhr.onload = () => {
+        console.log('📥 Upload response:', {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          responseLength: xhr.responseText?.length
+        });
+        
         if (xhr.status === 200) {
           try {
             const response: FilecoinUploadResponse = JSON.parse(xhr.responseText);
+            console.log('✅ Upload successful:', response);
             resolve(response);
           } catch (error) {
-            reject(new Error('Failed to parse response'));
+            console.error('❌ Failed to parse response:', xhr.responseText);
+            reject(new Error(`Failed to parse response: ${xhr.responseText.substring(0, 100)}`));
           }
         } else {
-          reject(new Error(`Upload failed with status ${xhr.status}`));
+          console.error('❌ Upload failed:', {
+            status: xhr.status,
+            statusText: xhr.statusText,
+            response: xhr.responseText?.substring(0, 200)
+          });
+          reject(new Error(`Upload failed with status ${xhr.status}: ${xhr.statusText || xhr.responseText?.substring(0, 100)}`));
         }
       };
 
-      xhr.onerror = () => {
-        reject(new Error('Network error during upload'));
+      xhr.onerror = (event) => {
+        const errorDetails = {
+          status: xhr.status,
+          statusText: xhr.statusText,
+          readyState: xhr.readyState,
+          url: this.apiUrl,
+          urlSet: !!this.apiUrl,
+          eventType: event.type,
+          timestamp: new Date().toISOString()
+        };
+        console.error('❌ XMLHttpRequest network error:', errorDetails);
+        
+        // Provide more helpful error message
+        let errorMessage = 'Network error during upload';
+        if (!this.apiUrl) {
+          errorMessage = 'FILECOIN_UPLOAD_API_URL is not configured. Please set NEXT_PUBLIC_FILECOIN_UPLOAD_API_URL in your .env.local file';
+        } else if (xhr.readyState === 0) {
+          errorMessage = `Failed to connect to ${this.apiUrl}. The Filecoin worker may be down or the URL is incorrect.`;
+        } else {
+          errorMessage = `Network error connecting to ${this.apiUrl}. Check: 1) Is the worker deployed? 2) Is the URL correct? 3) Are there CORS issues?`;
+        }
+        
+        reject(new Error(errorMessage));
+      };
+
+      xhr.ontimeout = () => {
+        console.error('❌ Upload timeout:', {
+          url: this.apiUrl,
+          timeout: xhr.timeout
+        });
+        reject(new Error(`Upload timeout after ${xhr.timeout}ms. The Filecoin worker may be slow or unresponsive.`));
       };
 
       // Prepare the request
       xhr.open('POST', this.apiUrl!);
+      xhr.timeout = 60000; // 60 second timeout
       xhr.setRequestHeader('x-file-name', encodeURIComponent(file.name));
       xhr.setRequestHeader('user-id', userId);
       xhr.setRequestHeader('x-file-size', file.size.toString());
       xhr.setRequestHeader('x-upload-method', 'stream');
       xhr.setRequestHeader('x-image-type', imageType);
       xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
+      
+      console.log('🚀 Starting upload request:', {
+        method: 'POST',
+        url: this.apiUrl,
+        fileName: file.name,
+        fileSize: file.size,
+        headers: {
+          'x-file-name': file.name,
+          'user-id': userId,
+          'x-file-size': file.size.toString(),
+          'x-upload-method': 'stream',
+          'x-image-type': imageType,
+          'Content-Type': file.type || 'application/octet-stream'
+        }
+      });
 
       // Add image dimension headers if available
       if (imageDimensions) {

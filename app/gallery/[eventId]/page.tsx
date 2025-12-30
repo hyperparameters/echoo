@@ -22,12 +22,13 @@ import { EventMatchedImageResponse } from "@/lib/api/types";
 import { usePrivy } from "@privy-io/react-auth";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { UploadService } from "@/services/upload";
 
 export default function EventGalleryPage() {
   const params = useParams();
   const router = useRouter();
   const eventId = parseInt(params.eventId as string);
-  const { user } = usePrivy();
+  const { user, getAccessToken } = usePrivy();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -84,20 +85,39 @@ export default function EventGalleryPage() {
 
     setIsUploading(true);
     const uploadPromises = Array.from(files).map(async (file) => {
+      try {
+        // Step 1: Upload directly to Filecoin from client (like old version)
+        // This works because we're in the browser where XMLHttpRequest exists
+        const filecoinResponse = await UploadService.uploadFile(
+          file,
+          user.id,
+          undefined, // No progress callback for now
+          'event-image'
+        );
+
+        // Step 2: Send Filecoin response to Next.js API route to save to database
+        // The API route handles the secure backend call
       const formData = new FormData();
-      formData.append("file", file);
+        formData.append("filecoin_response", JSON.stringify(filecoinResponse));
+        formData.append("file_name", file.name);
+        formData.append("file_type", file.type);
       formData.append("event_id", eventId.toString());
       formData.append("user_id", user.id);
 
-      try {
+        // Get Privy access token for authentication
+        const accessToken = await getAccessToken();
+        
         const response = await fetch("/api/v1/upload-event-image", {
           method: "POST",
+          headers: {
+            'Authorization': accessToken ? `Bearer ${accessToken}` : '',
+          },
           body: formData,
         });
 
         if (!response.ok) {
           const error = await response.json().catch(() => ({}));
-          throw new Error(error.error || "Upload failed");
+          throw new Error(error.error || error.details || "Failed to save image to database");
         }
 
         return await response.json();
@@ -116,6 +136,13 @@ export default function EventGalleryPage() {
       queryClient.invalidateQueries({
         queryKey: ["events", eventId, "matched-images"],
       });
+      queryClient.refetchQueries({
+        queryKey: ["events", eventId, "matched-images"],
+      });
+      
+      // Trigger a custom event to refresh homepage images
+      // (Homepage uses manual fetch, not React Query)
+      window.dispatchEvent(new CustomEvent('images-uploaded'));
     } catch (error) {
       // Errors already handled in individual uploads
     } finally {

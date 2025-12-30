@@ -66,10 +66,23 @@ export default function HomePage() {
     
     try {
       setIsLoadingImages(true);
+      console.log('🔄 Fetching user images...');
       const images = await imagesApi.getUserImages();
+      console.log('✅ Fetched images:', images.length, images);
       setApiImages(images);
-    } catch (error) {
-      console.error('Failed to fetch images:', error);
+    } catch (error: any) {
+      console.error('❌ Failed to fetch images:', error);
+      // Log more details for debugging
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          message: error.message,
+          name: error.name,
+          status: (error as any).status,
+          response: (error as any).response
+        });
+      }
+      // Set empty array on error so UI doesn't break
+      setApiImages([]);
     } finally {
       setIsLoadingImages(false);
     }
@@ -78,6 +91,19 @@ export default function HomePage() {
   useEffect(() => {
     fetchApiImages();
   }, [fetchApiImages, refreshKey]);
+
+  // Listen for image uploads from gallery page
+  useEffect(() => {
+    const handleImagesUploaded = () => {
+      console.log('📸 Images uploaded event received, refreshing...');
+      setRefreshKey((prev) => prev + 1);
+    };
+    
+    window.addEventListener('images-uploaded', handleImagesUploaded);
+    return () => {
+      window.removeEventListener('images-uploaded', handleImagesUploaded);
+    };
+  }, []);
 
   const handleUploadComplete = (responses: FilecoinUploadResponse[]) => {
     console.log("Upload completed:", responses);

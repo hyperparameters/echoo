@@ -11,7 +11,7 @@ export const eventsApi = {
     },
 
     getEvent: async (eventId: number): Promise<EventResponse> => {
-        return apiClient.get<EventResponse>(`/api/v1/events/${eventId}`);
+        return apiClient.get<EventResponse>(`/api/v1/public/getEventList/${eventId}`);
     },
 
     registerEvent: async (eventId: number): Promise<EventRegistrationResponse> => {

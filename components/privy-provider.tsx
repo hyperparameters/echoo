@@ -59,18 +59,18 @@ export function PrivyProvider({ children }: { children: React.ReactNode }) {
         },
         embeddedWallets: {
           ethereum: {
-            createOnLogin: 'users-without-wallets',
+          createOnLogin: 'users-without-wallets',
           },
         },
         // Default chain for embedded wallets
         defaultChain: config.chains[0],
       }}
     >
-      <WagmiProvider config={config}>
-        <PrivyAuthConnector>
-          {children}
-        </PrivyAuthConnector>
-      </WagmiProvider>
+        <WagmiProvider config={config}>
+          <PrivyAuthConnector>
+            {children}
+          </PrivyAuthConnector>
+        </WagmiProvider>
     </BasePrivyProvider>
   );
 }
