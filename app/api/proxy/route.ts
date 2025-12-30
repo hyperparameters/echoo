@@ -73,11 +73,12 @@ export async function POST(req: NextRequest) {
     targetUrl = webhookUrl;
     console.log('Using Webhook URL for target:', targetUrl);
   } else {
-    if (!agentId) {
-      return getErrorResponse(new Error('Agent ID is required when Webhook URL is not set'), 400);
-    }
-    targetUrl = `${baseUrl}/v1/agents/${agentId}/chat`;
-    console.log('Using Platform API URL for target:', targetUrl);
+    // Direct agent API endpoint doesn't exist - agents are called by the platform via workflows
+    // If no webhook URL, we need to use a workflow that calls the agent
+    return getErrorResponse(
+      new Error('OPENSERV_WEBHOOK_URL is required. Agents are called via workflows, not direct API endpoints. Please configure a workflow in OpenServ platform that calls your registered agent.'),
+      400
+    );
   }
 
   // Mock response removed as per user request

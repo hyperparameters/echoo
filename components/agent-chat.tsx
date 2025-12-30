@@ -349,7 +349,9 @@ export function AgentChat({
       }
 
       // Prepare payload for OpenServ Agent SDK
+      // CRITICAL: Include 'id' at top level for callback ID matching
       const payload = {
+        id: requestId, // Top-level id for workflow to use {{triggerEvent.id}} in callback
         agentId,
         type: 'respond-chat-message',
         messages: [...messages, userMessage].map(msg => ({
